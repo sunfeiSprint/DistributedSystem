@@ -8,4 +8,12 @@ public class Coordinates {
 		this.x = x;
 		this.y = y;
 	}	
+	
+	public boolean equals(Object other) {
+		return x == ((Coordinates) other).x && y == ((Coordinates) other).y;
+	}
+	@Override
+	public String toString() {
+		return "[x=" + x + ", y=" + y + "]";
+	}
 }

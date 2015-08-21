@@ -1,18 +1,19 @@
 package mazeGameLocalVersion;
 
 public class Treasure {
+	private String treasureID;//treasureID starts with 200
 	private int locationX;
 	private int locationY;
 	private boolean collected;
 	
-	
-	public Treasure(int locationX, int locationY, boolean collected) {
+	public Treasure(String treasureID, int locationX, int locationY, boolean collected) {
 		super();
+		this.treasureID = treasureID;
 		this.locationX = locationX;
 		this.locationY = locationY;
 		this.collected = collected;
 	}
-	
+		
 	public int getLocationX() {
 		return locationX;
 	}

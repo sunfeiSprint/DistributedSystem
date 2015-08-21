@@ -3,25 +3,18 @@ package mazeGameLocalVersion;
 
 
 public class Player {
-	private int playerID;
+	private String playerID;
 	private int locationX;
 	private int locationY;
 	private int numCollectedTreasure;
 	
-	public Player(int playerID,int locationX, int locationY) {
+	public Player(String playerID,int locationX, int locationY) {
 		this.playerID = playerID;
 		this.locationX = locationX;
 		this.locationY = locationY;
 		this.numCollectedTreasure = 0;
 	}
 
-	public int getPlayerID() {
-		return playerID;
-	}
-
-	public void setPlayerID(int playerID) {
-		this.playerID = playerID;
-	}
 
 	public int getLocationX() {
 		return locationX;
@@ -63,6 +56,7 @@ public class Player {
 				break;
 			default:
 				break;
+			
 		}			
 		return this;
 	}
