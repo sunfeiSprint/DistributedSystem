@@ -67,6 +67,7 @@ public class Player {
 		boolean playerCanMove = false;
 		
 		//will it hit wall?
+		game.Locations.get();
 		
 		//new postion is player?
 		

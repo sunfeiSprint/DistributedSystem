@@ -11,6 +11,7 @@ public class GameStates {
 	
 	int N, numPlayers, numTreasuresLeft;//N is mapSize	
 	Random rand;
+	String[][] gameStates;
 	Map<String,Player> PlayerList;
 	Map<Coordinates,String> Locations;//record location of each player and treasure
 			
