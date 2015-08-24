@@ -1,76 +1,105 @@
 
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Arrays;
 import java.util.Random;
 
-public class GameStates {
+public class GameStates implements Serializable {
+
+	private static final long serialVersionUID = -4077101802232614756L;
 	
 	int N, numPlayers, numTreasuresLeft;//N is mapSize	
+	String[][] Locations;
 	Random rand;
-	Map<String,Player> PlayerList;
-	Map<Coordinates,String> Locations;//record location of each player and treasure
-			
+	
+	public int getMapSize() {
+		return N;
+	}
+
+	public void setMapSize(int n) {
+		N = n;
+	}
+
+	public int getNumPlayers() {
+		return numPlayers;
+	}
+
+	public void setNumPlayers(int numPlayers) {
+		this.numPlayers = numPlayers;
+	}
+
+	public int getNumTreasuresLeft() {
+		return numTreasuresLeft;
+	}
+
+	public void setNumTreasuresLeft(int numTreasuresLeft) {
+		this.numTreasuresLeft = numTreasuresLeft;
+	}
+
+	public String[][] getLocations() {
+		return Locations;
+	}
+
+	public void setLocations(String[][] locations) {
+		Locations = locations;
+	}
+
 	public GameStates(int n, int numPlayers, int numTreasuresLeft) {
 		super();
 		N = n;
 		this.numPlayers = numPlayers;
 		this.numTreasuresLeft = numTreasuresLeft;	
-		PlayerList = new HashMap<String, Player>();
-		Locations = new HashMap<Coordinates, String>();
 		rand = new Random(System.currentTimeMillis());	
+		
+		this.Locations = new String[n][n];
+		for (int i=0;i<n;i++){
+			for (int j=0;j<n;j++){
+				Locations[i][j] = "()";
+			}
+		}
 		placePlayers();
 		placeTreasures();
 	}
 	
 	/* method to init player locaiton of the game*/
 	private void placePlayers() {
-		Coordinates pos;
 		for (int i = 0; i < numPlayers; i++) {
-			String playerID = "player"+i;
+			String playerID = "p"+i;
 			int x;
 			int y;
 			do{			
 				x = rand.nextInt(N);
 				y = rand.nextInt(N);
-				pos = new Coordinates(x, y);
-			}while(Locations.get(pos) != null);
-			Locations.put(pos,playerID);
-//			Player player = new Player(playerID,x,y);
-//			PlayerList.put(playerID, player);
+			}while(Locations[x][y] != "()");
+			Locations[x][y] = playerID;
 		}
 	}
 	
-	/* method to init treasure locaiton of the game*/
-	private void placeTreasures(){		
-		Coordinates pos;
-		for (int i = 0; i < numPlayers; i++) {
-			String treasureID = "treasure"+i;
+	/* method to init player locaiton of the game*/
+	private void placeTreasures() {
+		for (int i = 0; i < numTreasuresLeft; i++) {
+			String trasureID = "t"+i;
+			int x;
+			int y;
 			do{			
-				int x = rand.nextInt(N);
-				int y = rand.nextInt(N);
-				pos = new Coordinates(x, y);
-			}while(Locations.get(pos) != null);
-			Locations.put(pos,treasureID);
-
-		}		
+				x = rand.nextInt(N);
+				y = rand.nextInt(N);
+			}while(Locations[x][y] != "()");
+			Locations[x][y] = trasureID;
+		}
 	}
 
 	@Override
 	public String toString() {
-		Iterator entries = this.Locations.entrySet().iterator();
-		String stringValue ="GameStates" +"\n";
-		
-		while (entries.hasNext()) {
-			  Entry thisEntry = (Entry) entries.next();
-			  Coordinates key = (Coordinates)thisEntry.getKey();
-			  String value = (String)thisEntry.getValue();
-			  stringValue = stringValue + key.toString() + value+ "\n";
+		String game = "Mapzie N = " + N;
+		game = game + "\n";
+		for (int i=0;i<N;i++){
+			for (int j=0;j<N;j++){
+				game = game + Locations[i][j];
 			}
-		
-		return stringValue;
+			game = game + "\n";
+		}
+		return game;
 	}
+
 }

@@ -1,6 +1,9 @@
 
 import java.util.Map;
-
+/**
+ * @author Sun Fei
+ *
+ */
 public class Player {
 	private String playerID;
 	private int locationX;
@@ -40,39 +43,94 @@ public class Player {
 	}	
 	
 	public GameStates move(String direction,GameStates game){
+		String[][] locations = game.getLocations();
+		int numberTresureLeft = game.getNumTreasuresLeft();
 		switch (direction){
 			case "S":
 				if (canMove(locationX,locationY,direction,game)){
+					locations[this.locationX][this.locationY] = "()";
 					this.setLocationY(this.locationY+1);
 				}
 				break;
 			case "N":
-				this.setLocationY(this.locationY-1);
+				if (canMove(locationX,locationY,direction,game)){
+					locations[this.locationX][this.locationY] = "()";
+					this.setLocationY(this.locationY-1);
+				}				
 				break;
 			case "E":
-				this.setLocationX(this.locationX+1);
+				if (canMove(locationX,locationY,direction,game)){
+					locations[this.locationX][this.locationY] = "()";
+					this.setLocationX(this.locationX+1);
+				}						
 				break;
 			case "W":
-				this.setLocationX(this.locationX-1);
+				if (canMove(locationX,locationY,direction,game)){
+					locations[this.locationX][this.locationY] = "()";
+					this.setLocationX(this.locationX-1);
+				}				
 				break;
 			default:
-				break;
-			
-		}			
+				return game;	
+		}
+		if (locations[locationX][locationY].startsWith("t")){//collect treasure
+			this.numCollectedTreasure = this.numCollectedTreasure + 1;
+			numberTresureLeft = numberTresureLeft -1;
+			game.setNumTreasuresLeft(numberTresureLeft);
+			locations[locationX][locationY] = this.playerID;
+		}else{
+			locations[locationX][locationY] = this.playerID;
+		}
 		return game;
 	}
 	
 	private boolean canMove(int X,int Y,String direction, GameStates game){
-		boolean playerCanMove = false;
-		
-		//will it hit wall?
-		
-		//new postion is player?
-		
-		//new position is treasure? collect treasure <hanle in move>
-		
-
-		return playerCanMove; 
+		String[][] locations = game.getLocations();
+		switch (direction){//Check if the player is already at boundary
+			case "S":
+				if (Y == (game.getMapSize()-1)){
+					return false;
+				}else{
+					int newY = Y + 1;
+					if (locations[X][newY].startsWith("p")){
+						return false;
+					} 
+				}
+				break;
+			case "N":
+				if (Y == 0){
+					return false;
+				}else{
+					int newY = Y - 1;
+					if (locations[X][newY].startsWith("p")){
+						return false;
+					} 
+				}
+				break;
+			case "E":
+				if (X == (game.getMapSize()-1)){
+					return false;
+				}else{
+					int newX = X - 1;
+					if (locations[newX][Y].startsWith("p")){
+						return false;
+					} 
+				}
+				break;
+			case "W":
+				if (X == (game.getMapSize()-1)){
+					return false;
+				}else{
+					int newX = X + 1;
+					if (locations[newX][Y].startsWith("p")){
+						return false;
+					} 
+				}
+				break;
+			default:
+				return false;		
+		}
+		return true;				
 	}
 
 	@Override
