@@ -1,7 +1,8 @@
 
 
 import java.io.Serializable;
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 public class GameStates implements Serializable {
@@ -11,7 +12,7 @@ public class GameStates implements Serializable {
 	int N, numPlayers, numTreasuresLeft;//N is mapSize	
 	String[][] Locations;
 	Random rand;
-	
+	Map<String,Coordinates> playerlocations;//record location of each player and treasure
 	public int getMapSize() {
 		return N;
 	}
@@ -52,17 +53,20 @@ public class GameStates implements Serializable {
 		rand = new Random(System.currentTimeMillis());	
 		
 		this.Locations = new String[n][n];
+		
 		for (int i=0;i<n;i++){
 			for (int j=0;j<n;j++){
 				Locations[i][j] = "()";
 			}
 		}
+		playerlocations = new HashMap<String, Coordinates>();
 		placePlayers();
 		placeTreasures();
 	}
 	
 	/* method to init player locaiton of the game*/
 	private void placePlayers() {
+		Coordinates pos;
 		for (int i = 0; i < numPlayers; i++) {
 			String playerID = "p"+i;
 			int x;
@@ -70,8 +74,10 @@ public class GameStates implements Serializable {
 			do{			
 				x = rand.nextInt(N);
 				y = rand.nextInt(N);
+				pos = new Coordinates(x, y);
 			}while(Locations[x][y] != "()");
 			Locations[x][y] = playerID;
+			playerlocations.put(playerID,pos);
 		}
 	}
 	

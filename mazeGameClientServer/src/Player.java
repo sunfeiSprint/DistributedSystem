@@ -10,6 +10,10 @@ public class Player {
 	private int locationY;
 	private int numCollectedTreasure;
 	
+	public Player(String playerID){
+		this.playerID = playerID;
+	}
+	
 	public Player(String playerID,int locationX, int locationY) {
 		this.playerID = playerID;
 		this.locationX = locationX;
