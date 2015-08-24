@@ -1,4 +1,7 @@
-
+/**
+ * @author Sun Fei
+ *
+ */
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -93,6 +96,14 @@ public class GameStates implements Serializable {
 			}while(Locations[x][y] != "()");
 			Locations[x][y] = trasureID;
 		}
+	}
+	
+	
+	public boolean isGameOver() {
+		if (numTreasuresLeft == 0) {
+			return true;
+		}
+		return false;
 	}
 
 	@Override

@@ -1,3 +1,7 @@
+/**
+ * @author Sun Fei
+ *
+ */
 public class Coordinates {
 
 	int x, y;
