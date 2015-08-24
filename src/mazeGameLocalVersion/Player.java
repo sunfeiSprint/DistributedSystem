@@ -40,7 +40,7 @@ public class Player {
 		this.numCollectedTreasure = numCollectedTreasure;
 	}	
 	
-	public GameStates move(String direction,GameStates game){
+	public GameStates move(String direction, GameStates game){
 		switch (direction){
 			case "S":
 				if (canMove(locationX,locationY,direction,game)){
