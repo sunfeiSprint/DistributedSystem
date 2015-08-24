@@ -1,6 +1,6 @@
 package mazeGameLocalVersion;
 
-
+import java.util.Map;
 
 public class Player {
 	private String playerID;
@@ -40,10 +40,12 @@ public class Player {
 		this.numCollectedTreasure = numCollectedTreasure;
 	}	
 	
-	public Player move(String direction){
+	public GameStates move(String direction,GameStates game){
 		switch (direction){
 			case "S":
-				this.setLocationY(this.locationY+1);
+				if (canMove(locationX,locationY,direction,game)){
+					this.setLocationY(this.locationY+1);
+				}
 				break;
 			case "N":
 				this.setLocationY(this.locationY-1);
@@ -58,7 +60,20 @@ public class Player {
 				break;
 			
 		}			
-		return this;
+		return game;
+	}
+	
+	private boolean canMove(int X,int Y,String direction, GameStates game){
+		boolean playerCanMove = false;
+		
+		//will it hit wall?
+		
+		//new postion is player?
+		
+		//new position is treasure? collect treasure <hanle in move>
+		
+
+		return playerCanMove; 
 	}
 
 	@Override

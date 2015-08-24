@@ -37,7 +37,7 @@ public class GameStates {
 				x = rand.nextInt(N);
 				y = rand.nextInt(N);
 				pos = new Coordinates(x, y);
-			}while(Locations.get(pos) != null);
+			}while(Locations.get(pos)  != null);
 			Locations.put(pos,playerID);
 //			Player player = new Player(playerID,x,y);
 //			PlayerList.put(playerID, player);
