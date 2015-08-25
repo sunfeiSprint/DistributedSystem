@@ -1,11 +1,12 @@
-import java.io.Console;
-import java.rmi.AccessException;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Benze on 8/24/15.
@@ -24,6 +25,13 @@ public class MazeGameClientImpl implements MazeGameClient {
 
     private GameStates gameStates;
 
+    /** Main io thread for receiving user input */
+    private Thread ioThread;
+
+    public MazeGameClientImpl(Thread thread) {
+        this.ioThread = thread;
+    }
+
     @Override
     public synchronized void notifyStart(String playerId, GameStates state) throws RemoteException {
         gameStatus = GAME_START;
@@ -36,7 +44,8 @@ public class MazeGameClientImpl implements MazeGameClient {
     public synchronized void notifyEnd(GameStates state) throws RemoteException {
         gameStatus = GAME_END;
         gameStates = state;
-       // System.console().
+        // interrupt the io thread
+        ioThread.interrupt();
     }
 
     public synchronized boolean isGameStarted() {
@@ -49,20 +58,24 @@ public class MazeGameClientImpl implements MazeGameClient {
 
     public void gaming(MazeGameServer server) {
         // when game is not end, print out game states and wait for user input
-        Console console = System.console();
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         while(!isGameEnd()) {
-            console.printf(gameStates.toString());
-            String move = console.readLine("move:");
-            if(move != null) {
-                try {
-                    gameStates = server.move(playerId, move);
-                } catch (RemoteException e) {
-                    System.err.println("remote exception: " + e);
+            System.out.println(gameStates.toString());
+            try {
+                while(!br.ready()) {
+                    TimeUnit.MILLISECONDS.sleep(200);
                 }
+                String input = br.readLine();
+                if(input != null)
+                    gameStates = server.move(playerId, input);  // a blocking operation
+            } catch (IOException e) {
+                System.err.println("io error.");
+            } catch (InterruptedException e) {
+                System.err.println("received interruption, game end.");
             }
         }
-        console.printf("********Game End********");
-        console.printf(gameStates.toString());
+        System.out.println("********Game End********");
+        System.out.println(gameStates.toString());
     }
 
     public static void main(String[] args) {
@@ -71,7 +84,7 @@ public class MazeGameClientImpl implements MazeGameClient {
         try {
             Registry registry = LocateRegistry.getRegistry(host, port);
             MazeGameServer server = (MazeGameServer) registry.lookup("MazeServer");
-            MazeGameClientImpl player = new MazeGameClientImpl();
+            MazeGameClientImpl player = new MazeGameClientImpl(Thread.currentThread());
             UnicastRemoteObject.exportObject(player, 0);
             boolean success = server.joinGame(player);
             if(success) {
@@ -83,7 +96,6 @@ public class MazeGameClientImpl implements MazeGameClient {
                 }
                 System.out.println("game start!");
                 player.gaming(server);
-
                 // TODO: clean exit
             }
         } catch (RemoteException e) {
