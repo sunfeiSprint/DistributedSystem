@@ -26,26 +26,6 @@ public class mazeGameServerImpl implements MazeGameServer,Runnable  {
 		Clientlist = new ArrayList<MazeGameClient>();
 		startTime = -1;
 	}
-	
-	private class DelayNotify implements Runnable {
-
-        public DelayNotify() {
-        }
-
-        @Override
-        public void run() {
-            try {
-            	gameState = new GameStates(mapSize,Clientlist.size(),numTresures);
-            	
-            	for (int i = 0; i < Clientlist.size(); i++) {
-        			String playerID = "p" + i;
-        			Clientlist.get(i).notifyStart(playerID, gameState);
-        		}
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 
 	@Override
 	public synchronized boolean joinGame(MazeGameClient client) throws RemoteException {
@@ -91,7 +71,15 @@ public class mazeGameServerImpl implements MazeGameServer,Runnable  {
 		
 		gameState = new GameStates(mapSize,Clientlist.size(),numTresures);
 		
-		//notify start
+		for (int i=0;i<Clientlist.size();i++){
+			String playerID = "p"+i;
+			try {
+			Clientlist.get(i).notifyStart(playerID, gameState);
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		
 		while (!gameState.isGameOver()) {
 			try {
@@ -100,7 +88,15 @@ public class mazeGameServerImpl implements MazeGameServer,Runnable  {
 			}
 		}
 		
-		//nofigy end
+		for (int i=0;i<Clientlist.size();i++){
+			String playerID = "p"+i;
+			try {
+			Clientlist.get(i).notifyEnd(gameState);
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	public static void main(String[] args) {
@@ -121,9 +117,6 @@ public class mazeGameServerImpl implements MazeGameServer,Runnable  {
 			System.out.println("Server exception: " + e.toString());
 			e.printStackTrace();
 			System.exit(1);
-		}
-		
-
-		
+		}		
 	}
 }
