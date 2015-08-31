@@ -1,26 +1,37 @@
 
+import java.rmi.RemoteException;
 import java.util.Map;
 /**
  * @author Sun Fei
  *
  */
 public class Player {
-	private String playerID;
+
+    private MazeGameClient clientRef;
+
+	private int playerID;
+
 	private int locationX;
+
 	private int locationY;
+
 	private int numCollectedTreasure;
 	
-	public Player(String playerID){
+	public Player(int playerID, MazeGameClient clientRef) {
 		this.playerID = playerID;
+        this.clientRef = clientRef;
 	}
 	
-	public Player(String playerID,int locationX, int locationY) {
+	public Player(int playerID,int locationX, int locationY) {
 		this.playerID = playerID;
 		this.locationX = locationX;
 		this.locationY = locationY;
 		this.numCollectedTreasure = 0;
 	}
 
+    public void notifyGameStart(GameState gameState) throws RemoteException {
+        clientRef.notifyStart(playerID, gameState);
+    }
 
 	public int getLocationX() {
 		return locationX;
@@ -46,7 +57,7 @@ public class Player {
 		this.numCollectedTreasure = numCollectedTreasure;
 	}	
 	
-	public GameStates move(String direction,GameStates game){
+	public GameStates move(String direction, GameStates game){
 		int numberTresureLeft = game.getNumTreasuresLeft();
 		switch (direction){
 			case "S":
@@ -80,9 +91,9 @@ public class Player {
 			this.numCollectedTreasure = this.numCollectedTreasure + 1;
 			numberTresureLeft = numberTresureLeft -1;
 			game.setNumTreasuresLeft(numberTresureLeft);
-			game.getLocations()[locationX][locationY] = this.playerID;
+			game.getLocations()[locationX][locationY] = Integer.toString(this.playerID);
 		}else{
-			game.getLocations()[locationX][locationY] = this.playerID;
+			game.getLocations()[locationX][locationY] = Integer.toString(this.playerID);
 		}
 		return game;
 	}
