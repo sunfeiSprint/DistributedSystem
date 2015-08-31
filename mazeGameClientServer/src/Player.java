@@ -11,6 +11,9 @@ public class Player {
 
 	private int playerID;
 
+    private Coordinates coordinates;
+
+
 	private int locationX;
 
 	private int locationY;
@@ -28,6 +31,10 @@ public class Player {
 		this.locationY = locationY;
 		this.numCollectedTreasure = 0;
 	}
+
+    public Coordinates getCoordinates() {
+        return coordinates;
+    }
 
     public void notifyGameStart(GameState gameState) throws RemoteException {
         clientRef.notifyStart(playerID, gameState);

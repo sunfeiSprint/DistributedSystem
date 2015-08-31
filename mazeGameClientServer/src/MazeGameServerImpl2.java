@@ -61,7 +61,7 @@ public class MazeGameServerImpl2 implements MazeGameServer{
 
     private void initializeGame() {
         int mapSize = 5, numTresures = 5;
-        gameState = new GameState();
+        gameState = new GameState(new char[5][5]);
 //        gameState = new GameState(mapSize, players.size(), numTresures);
     }
 
@@ -89,6 +89,10 @@ public class MazeGameServerImpl2 implements MazeGameServer{
 
     @Override
     public GameState move(int playerID, String dir) throws RemoteException {
+        Player player = players.get(playerID);
+
+        //game.move(player, dir);
+
         return null;
     }
 
