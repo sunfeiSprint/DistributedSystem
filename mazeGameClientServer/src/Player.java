@@ -47,43 +47,42 @@ public class Player {
 	}	
 	
 	public GameStates move(String direction,GameStates game){
-		String[][] locations = game.getLocations();
 		int numberTresureLeft = game.getNumTreasuresLeft();
 		switch (direction){
 			case "S":
 				if (canMove(locationX,locationY,direction,game)){
-					locations[this.locationX][this.locationY] = "()";
+					game.getLocations()[this.locationX][this.locationY] = "()";
 					this.setLocationY(this.locationY+1);
 				}
 				break;
 			case "N":
 				if (canMove(locationX,locationY,direction,game)){
-					locations[this.locationX][this.locationY] = "()";
+					game.getLocations()[this.locationX][this.locationY] = "()";
 					this.setLocationY(this.locationY-1);
 				}				
 				break;
 			case "E":
 				if (canMove(locationX,locationY,direction,game)){
-					locations[this.locationX][this.locationY] = "()";
+					game.getLocations()[this.locationX][this.locationY] = "()";
 					this.setLocationX(this.locationX+1);
 				}						
 				break;
 			case "W":
 				if (canMove(locationX,locationY,direction,game)){
-					locations[this.locationX][this.locationY] = "()";
+					game.getLocations()[this.locationX][this.locationY] = "()";
 					this.setLocationX(this.locationX-1);
 				}				
 				break;
 			default:
 				return game;	
 		}
-		if (locations[locationX][locationY].startsWith("t")){//collect treasure
+		if (game.getLocations()[locationX][locationY].startsWith("t")){//collect treasure
 			this.numCollectedTreasure = this.numCollectedTreasure + 1;
 			numberTresureLeft = numberTresureLeft -1;
 			game.setNumTreasuresLeft(numberTresureLeft);
-			locations[locationX][locationY] = this.playerID;
+			game.getLocations()[locationX][locationY] = this.playerID;
 		}else{
-			locations[locationX][locationY] = this.playerID;
+			game.getLocations()[locationX][locationY] = this.playerID;
 		}
 		return game;
 	}
