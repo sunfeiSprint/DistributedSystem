@@ -136,6 +136,10 @@ public class Player {
 		}
 		return true;				
 	}
+	
+	public boolean equals(Object other) {
+		return this.playerID == ((Player) other).playerID;
+	}
 
 	@Override
 	public String toString() {

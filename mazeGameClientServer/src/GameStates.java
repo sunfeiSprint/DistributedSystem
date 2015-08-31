@@ -15,7 +15,7 @@ public class GameStates implements Serializable {
 	int N, numPlayers, numTreasuresLeft;//N is mapSize	
 	String[][] Locations;
 	Random rand;
-	Map<String,Coordinates> playerlocations;//record location of each player and treasure
+	Map<String,Coordinates> playerlocations;//record initial location of each player
 	public int getMapSize() {
 		return N;
 	}

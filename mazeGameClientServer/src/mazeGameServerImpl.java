@@ -1,10 +1,9 @@
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-
+import java.util.Map;
 /**
  * @author Sun Fei
  *
@@ -12,11 +11,11 @@ import java.util.concurrent.ScheduledExecutorService;
 public class mazeGameServerImpl implements MazeGameServer,Runnable  {
 	
 	private List<MazeGameClient> Clientlist;
+	private Map<String,Player> Playerlist;
 	private int gameStarted;//0 game Waiting to start, 1 game started, 2 game ended.
 	private long startTime;
 	
 	private GameStates gameState;
-	private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 	
 	private int mapSize = 20;
 	private int numTresures = 10;
@@ -24,6 +23,7 @@ public class mazeGameServerImpl implements MazeGameServer,Runnable  {
 	
 	public mazeGameServerImpl() throws RemoteException {
 		Clientlist = new ArrayList<MazeGameClient>();
+		Playerlist = new HashMap<String,Player>();
 		startTime = -1;
 	}
 
@@ -44,8 +44,8 @@ public class mazeGameServerImpl implements MazeGameServer,Runnable  {
 
 	@Override
 	public GameStates move(String playerID, String dir) throws RemoteException {
-		// TODO Auto-generated method stub
-		return null;
+		this.gameState=Playerlist.get(playerID).move(dir, this.gameState);
+		return this.gameState;
 	}
 	@Override
 	public void run() {
@@ -71,8 +71,16 @@ public class mazeGameServerImpl implements MazeGameServer,Runnable  {
 		
 		gameState = new GameStates(mapSize,Clientlist.size(),numTresures);
 		
+		//Create list of player		
+		//notify start of the game to the client
 		for (int i=0;i<Clientlist.size();i++){
+			//construct player list 
 			String playerID = "p"+i;
+			Player player = new Player(playerID);
+			Coordinates location = gameState.playerlocations.get(player);
+			player.setLocationX(location.getX());
+			player.setLocationY(location.getY());		
+			Playerlist.put(playerID, player);		
 			try {
 			Clientlist.get(i).notifyStart(playerID, gameState);
 			} catch (RemoteException e) {
@@ -88,6 +96,7 @@ public class mazeGameServerImpl implements MazeGameServer,Runnable  {
 			}
 		}
 		
+		//notify end of the game to the client
 		for (int i=0;i<Clientlist.size();i++){
 			String playerID = "p"+i;
 			try {
