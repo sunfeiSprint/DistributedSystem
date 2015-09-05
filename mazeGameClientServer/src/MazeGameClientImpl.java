@@ -66,8 +66,13 @@ public class MazeGameClientImpl implements MazeGameClient {
                     TimeUnit.MILLISECONDS.sleep(200);
                 }
                 String input = br.readLine();
-                if(input != null)
-                    gameState = server.move(playerId, input);  // a blocking operation
+                if(input != null && isValidInput(input)) {
+                    char dir = input.charAt(0);
+                    gameState = server.move(playerId, dir);  // a blocking operation
+                    System.out.println(gameState);
+                } else {
+                    System.out.println("error input.");
+                }
             } catch (IOException e) {
                 System.err.println("io error.");
             } catch (InterruptedException e) {
@@ -78,11 +83,17 @@ public class MazeGameClientImpl implements MazeGameClient {
         System.out.println(gameState.toString());
     }
 
+    private boolean isValidInput(String input) {
+        // TODO: check if input is valid
+        return true;
+    }
+
     public static void main(String[] args) {
         String host = (args.length < 1) ? null : args[0];
         int port = Integer.parseInt(args[1]);
         try {
             Registry registry = LocateRegistry.getRegistry(host, port);
+//            Registry registry = LocateRegistry.getRegistry(host);
             MazeGameServer server = (MazeGameServer) registry.lookup("MazeGameServer");
             MazeGameClientImpl player = new MazeGameClientImpl(Thread.currentThread());
             UnicastRemoteObject.exportObject(player, 0);

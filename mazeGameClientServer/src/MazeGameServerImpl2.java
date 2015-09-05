@@ -4,9 +4,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -29,40 +27,33 @@ public class MazeGameServerImpl2 implements MazeGameServer{
 
     private volatile int gameStatus = GAME_INIT;
 
+    // TODO: may need to synchronize
     private Map<Integer, Player> players = new HashMap<Integer, Player>();
 
     private int playerNum = 0;
-
-    // TODO: may need to synchronize
-    //private List<MazeGameClient> gameClients = new ArrayList<>();
 
     /** registry port for testisng */
     private static final int REGISTRY_PORT = 8888;
 
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
-    private GameState gameState;
+    private Game game;
 
     private class GameInitializeTask implements Runnable {
         @Override
         public void run() {
             gameStatus = GAME_START;
-            initializeGame();
+            game = new Game(players);
+            // TODO: what happens if notifyGameStart gets blocked?
             for(Integer key : players.keySet()) {
                 Player player = players.get(key);
                 try {
-                    player.notifyGameStart(gameState);
+                    player.notifyGameStart(game.getGameStateForPlayer(player));
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
             }
         }
-    }
-
-    private void initializeGame() {
-        int mapSize = 5, numTresures = 5;
-        gameState = new GameState(new char[5][5]);
-//        gameState = new GameState(mapSize, players.size(), numTresures);
     }
 
     @Override
@@ -88,12 +79,12 @@ public class MazeGameServerImpl2 implements MazeGameServer{
     }
 
     @Override
-    public GameState move(int playerID, String dir) throws RemoteException {
-        Player player = players.get(playerID);
-
-        //game.move(player, dir);
-
-        return null;
+    public GameState move(int playerID, char dir) throws RemoteException {
+        GameState state = game.playerMove(playerID, dir);
+        if(game.isGameOver()) {
+            // TODO: what happens if game is over
+        }
+        return state;
     }
 
     public static void main(String[] args) {

@@ -9,6 +9,6 @@ public interface MazeGameServer extends Remote {
 	final static boolean FAILED = false;
 	
 	public boolean joinGame(MazeGameClient client) throws RemoteException;//client join game
-	public GameState move(int playerID, String dir) throws RemoteException;//player move
+	public GameState move(int playerID, char dir) throws RemoteException;//player playerMove
 	//startgame
 }
