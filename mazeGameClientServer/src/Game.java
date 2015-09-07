@@ -46,7 +46,22 @@ public class Game {
     }
 
     public static Coordinate getTargetCoordinate(Coordinate origin, char dir) {
-        // TODO: calculate the target coordinate from the origin and dir
-        return null;
+        int newX,newY;
+    	int oldX = origin.getX();
+    	int oldY = origin.getY();
+    	Coordinate newCoordinate = new Coordinate(oldX,oldY);
+    	swith(direction){
+    		case "S":
+    			newY = Y + 1;
+    		case "N":
+    			newY = Y - 1;
+    		case "E":
+    			newX = X - 1;
+    		case "W":
+    			newX = X + 1;
+    	}
+        newCoordinate.setX(newX);
+        newCoordinate.setY(newY);
+        return newCoordinate;
     }
 }

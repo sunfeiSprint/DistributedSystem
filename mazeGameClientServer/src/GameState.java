@@ -37,8 +37,14 @@ public class GameState implements Serializable {
     }
 
     public boolean isTargetReachable(Coordinate target) {
-        // TODO: check if the target coordinate is reachable
-        return true;
+        boolean reachable = true;
+        int locationX = target.getX();
+        int locationY = target.getY();
+        //check out of boundary
+        if (locationX<0||locationY<0||locationX>=dimension||locationY>=dimension){
+        	reachable = false;
+        }
+        return reachable;
     }
 
     public boolean isTreasure(Coordinate target) {
