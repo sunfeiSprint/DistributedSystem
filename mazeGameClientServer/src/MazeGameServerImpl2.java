@@ -32,6 +32,10 @@ public class MazeGameServerImpl2 implements MazeGameServer{
 
     private int playerNum = 0;
 
+    private int numOfTreasure;
+
+    private int dimension;
+
     /** registry port for testisng */
     private static final int REGISTRY_PORT = 8888;
 
@@ -43,7 +47,7 @@ public class MazeGameServerImpl2 implements MazeGameServer{
         @Override
         public void run() {
             gameStatus = GAME_START;
-            game = new Game(players);
+            game = new Game(players, numOfTreasure, dimension);
             // TODO: what happens if notifyGameStart gets blocked?
             for(Integer key : players.keySet()) {
                 Player player = players.get(key);
@@ -54,6 +58,11 @@ public class MazeGameServerImpl2 implements MazeGameServer{
                 }
             }
         }
+    }
+
+    public MazeGameServerImpl2(int dimension, int numOfTreasure) {
+        this.numOfTreasure = numOfTreasure;
+        this.dimension = dimension;
     }
 
     @Override
@@ -88,8 +97,13 @@ public class MazeGameServerImpl2 implements MazeGameServer{
     }
 
     public static void main(String[] args) {
+        if(args.length < 2) {
+            System.out.println("usage: <arg0> dimension, <arg1> number of treasure");
+        }
+        int dimension = Integer.valueOf(args[0]);
+        int numOfTreasure = Integer.valueOf(args[1]);
         try {
-            MazeGameServerImpl2 server = new MazeGameServerImpl2();
+            MazeGameServerImpl2 server = new MazeGameServerImpl2(dimension, numOfTreasure);
             MazeGameServer stub = (MazeGameServer) UnicastRemoteObject.exportObject(server, 0);
             // Bind the remote object's stub in the registry
             rmiRegistry = LocateRegistry.createRegistry(REGISTRY_PORT);

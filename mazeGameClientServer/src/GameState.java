@@ -22,8 +22,9 @@ public class GameState implements Serializable {
     /** the dimension of map */
     private int dimension;
 
-    public GameState(int n) {
+    public GameState(int m, int n) {
         this.dimension = n;
+        this.numOfTreasure = m;
         this.map = new char[dimension][dimension];
         initializeMap();
     }
@@ -94,7 +95,7 @@ public class GameState implements Serializable {
 //        map[2][2] = OTHER_PLAYER;
 //        map[3][3] = OTHER_PLAYER;
 //        map[0][0] = PLAYER;
-        GameState state = new GameState(5);
+        GameState state = new GameState(10, 10);
         System.out.println(state);
     }
 }

@@ -1,3 +1,5 @@
+import org.junit.Test;
+
 import static org.junit.Assert.*;
 
 public class GameTest {
@@ -33,6 +35,5 @@ public class GameTest {
         assertTrue(target.getX() == 3);
         assertTrue(target.getY() == 4);
     }
-
 
 }

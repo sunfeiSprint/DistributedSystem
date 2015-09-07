@@ -9,10 +9,10 @@ public class Game {
 
     private Map<Integer, Player> players;
 
-    public Game(Map<Integer, Player> players) {
+    public Game(Map<Integer, Player> players, int numOfTreasure, int dimension) {
         this.players = players;
         // TODO: change to random number
-        gameState = new GameState(10);
+        gameState = new GameState(numOfTreasure, dimension);
     }
 
     public GameState getGameState() {
@@ -50,18 +50,18 @@ public class Game {
     	int oldX = origin.getX();
     	int oldY = origin.getY();
     	Coordinate newCoordinate = new Coordinate(oldX,oldY);
-    	swith(direction){
-    		case "S":
-    			newY = Y + 1;
-    		case "N":
-    			newY = Y - 1;
-    		case "E":
-    			newX = X - 1;
-    		case "W":
-    			newX = X + 1;
-    	}
-        newCoordinate.setX(newX);
-        newCoordinate.setY(newY);
+//    	swith(direction){
+//    		case "S":
+//    			newY = Y + 1;
+//    		case "N":
+//    			newY = Y - 1;
+//    		case "E":
+//    			newX = X - 1;
+//    		case "W":
+//    			newX = X + 1;
+//    	}
+//        newCoordinate.setX(newX);
+//        newCoordinate.setY(newY);
         return newCoordinate;
     }
 }
