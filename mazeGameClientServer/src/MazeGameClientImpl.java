@@ -67,7 +67,7 @@ public class MazeGameClientImpl implements MazeGameClient {
                 }
                 String input = br.readLine();
                 if(input != null && isValidInput(input)) {
-                    char dir = input.charAt(0);
+                    char dir = Character.toUpperCase(input.charAt(0));
                     gameState = server.move(playerId, dir);  // a blocking operation
                     System.out.println(gameState);
                 } else {

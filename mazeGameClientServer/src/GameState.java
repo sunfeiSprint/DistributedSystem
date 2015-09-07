@@ -7,7 +7,7 @@ import java.util.Random;
 /**
  * Created by Benze on 8/31/15.
  */
-public class GameState implements Serializable {
+public class GameState implements Serializable, Cloneable {
 
     public static final char TREASURE = '$';
 
@@ -17,8 +17,7 @@ public class GameState implements Serializable {
 
     public static final char EMPTY = ' ';
 
-    char[][] map;
-    
+    private char[][] map;
 
     /** number of treasure */
     private int numOfTreasure;
@@ -31,6 +30,8 @@ public class GameState implements Serializable {
 
     /** number of players */
     private int numOfPlayer;
+
+    //private
 
     public GameState(int dimension, int numOfTreasure, int numOfPlayer) {
         this.dimension = dimension;
@@ -93,6 +94,12 @@ public class GameState implements Serializable {
         }
         return reachable;
     }
+
+    public void setMapLocation(int x, int y, char symbol) {
+        map[y][x] = symbol;
+    }
+
+//    public void set
 
     public boolean isTreasure(Coordinate target) {
         // check if the target position has treasure

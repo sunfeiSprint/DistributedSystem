@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by Benze on 8/31/15.
  */
-public class MazeGameServerImpl2 implements MazeGameServer{
+public class MazeGameServerImpl implements MazeGameServer{
 
     private static Registry rmiRegistry;
 
@@ -46,13 +46,16 @@ public class MazeGameServerImpl2 implements MazeGameServer{
     private class GameInitializeTask implements Runnable {
         @Override
         public void run() {
+            System.out.println("game start");
             gameStatus = GAME_START;
             game = new Game(players, numOfTreasure, dimension);
+            System.out.println("map initialized");
             // notifyGameStart is non-blocking.
             for(Integer key : players.keySet()) {
                 Player player = players.get(key);
                 try {
-                    player.notifyGameStart(game.getGameStateForPlayer(player));
+//                    player.notifyGameStart(game.getGameStateForPlayer(player));
+                    player.notifyGameStart(game.getGameState());
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -60,7 +63,7 @@ public class MazeGameServerImpl2 implements MazeGameServer{
         }
     }
 
-    public MazeGameServerImpl2(int dimension, int numOfTreasure) {
+    public MazeGameServerImpl(int dimension, int numOfTreasure) {
         this.numOfTreasure = numOfTreasure;
         this.dimension = dimension;
     }
@@ -92,6 +95,7 @@ public class MazeGameServerImpl2 implements MazeGameServer{
         GameState state = game.playerMove(playerID, dir);
         if(game.isGameOver()) {
             // TODO: what happens if game is over
+            gameStatus = GAME_END;
         }
         return state;
     }
@@ -103,7 +107,7 @@ public class MazeGameServerImpl2 implements MazeGameServer{
         int dimension = Integer.valueOf(args[0]);
         int numOfTreasure = Integer.valueOf(args[1]);
         try {
-            MazeGameServerImpl2 server = new MazeGameServerImpl2(dimension, numOfTreasure);
+            MazeGameServerImpl server = new MazeGameServerImpl(dimension, numOfTreasure);
             MazeGameServer stub = (MazeGameServer) UnicastRemoteObject.exportObject(server, 0);
             // Bind the remote object's stub in the registry
             rmiRegistry = LocateRegistry.createRegistry(REGISTRY_PORT);

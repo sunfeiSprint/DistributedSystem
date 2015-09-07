@@ -24,7 +24,7 @@ public class Game {
 			gameSnapshot = gameState.clone();
 		    int X = player.getCoordinate().getX();
 		    int Y = player.getCoordinate().getY();
-			gameSnapshot.map[X][Y] = gameState.PLAYER;
+			gameSnapshot.setMapLocation(X, Y, gameState.CUR_PLAYER);
 	    	return gameSnapshot;
 		} catch (CloneNotSupportedException e) {			
 			e.printStackTrace();
