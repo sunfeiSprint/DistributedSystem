@@ -15,6 +15,7 @@ public class GameState implements Serializable {
     public static final char EMPTY = ' ';
 
     char[][] map;
+    
 
     /** number of treasure */
     private int numOfTreasure;
@@ -44,6 +45,11 @@ public class GameState implements Serializable {
         //check out of boundary
         if (locationX<0||locationY<0||locationX>=dimension||locationY>=dimension){
         	reachable = false;
+        }
+        if (reachable){
+        	if (map[locationX][locationY] == PLAYER){
+        		reachable = false;
+        	}
         }
         return reachable;
     }
@@ -83,6 +89,10 @@ public class GameState implements Serializable {
         }
         sb.append(System.lineSeparator());
         return sb.toString();
+    }
+    
+    public GameState clone() throws CloneNotSupportedException {
+        return (GameState) super.clone();
     }
 
     public static void main(String[] args) {
