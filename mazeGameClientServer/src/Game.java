@@ -11,8 +11,7 @@ public class Game {
 
     public Game(Map<Integer, Player> players, int numOfTreasure, int dimension) {
         this.players = players;
-        // TODO: change to random number
-        gameState = new GameState(numOfTreasure, dimension);
+        gameState = new GameState(dimension, numOfTreasure, players.size());
     }
 
     public GameState getGameState() {

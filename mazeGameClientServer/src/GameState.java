@@ -1,5 +1,8 @@
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 
 /**
  * Created by Benze on 8/31/15.
@@ -19,18 +22,55 @@ public class GameState implements Serializable {
     /** number of treasure */
     private int numOfTreasure;
 
+    /** number of treasure on each treasure block */
+    private Map<Integer, Integer> numOfTreasurePerBlock = new HashMap<Integer, Integer>();
+
     /** the dimension of map */
     private int dimension;
 
-    public GameState(int m, int n) {
-        this.dimension = n;
-        this.numOfTreasure = m;
+    /** number of players */
+    private int numOfPlayer;
+
+    public GameState(int dimension, int numOfTreasure, int numOfPlayer) {
+        this.dimension = dimension;
+        this.numOfTreasure = numOfTreasure;
+        this.numOfPlayer = numOfPlayer;
         this.map = new char[dimension][dimension];
         initializeMap();
     }
 
     private void initializeMap() {
-        // TODO: randomly initialize the map
+        for(char[] row : map) {
+            Arrays.fill(row, GameState.EMPTY);
+        }
+        // randomly set the treasure location
+        Random random = new Random();
+        int limit = dimension * dimension;
+        for(int i = 0; i < numOfTreasure; i++) {
+            int r = random.nextInt(limit);
+            int x = r % dimension;
+            int y = r / dimension;
+            map[y][x] = TREASURE;
+            int key = hashKeyFromCoordinate(x, y);
+            if(numOfTreasurePerBlock.containsKey(key)) {
+                Integer value = numOfTreasurePerBlock.get(key);
+                value++;
+                numOfTreasurePerBlock.put(key, value);
+            } else {
+                numOfTreasurePerBlock.put(key, new Integer(1));
+            }
+        }
+        // randomly set the initial location of players
+        for(int i = 0; i < numOfPlayer; i++) {
+            int r = random.nextInt(limit);
+            int x = r % dimension;
+            int y = r / dimension;
+            map[y][x] = PLAYER;
+        }
+    }
+
+    private int hashKeyFromCoordinate(int x, int y) {
+        return y * dimension + x;
     }
 
     public int getDimension() {
@@ -54,6 +94,7 @@ public class GameState implements Serializable {
     }
 
     public void treasureCollected() {
+        // TODO: assuming player collect only one treasure each time
         numOfTreasure--;
     }
 
@@ -95,7 +136,7 @@ public class GameState implements Serializable {
 //        map[2][2] = OTHER_PLAYER;
 //        map[3][3] = OTHER_PLAYER;
 //        map[0][0] = PLAYER;
-        GameState state = new GameState(10, 10);
-        System.out.println(state);
+//        GameState state = new GameState(10, 10);
+//        System.out.println(state);
     }
 }

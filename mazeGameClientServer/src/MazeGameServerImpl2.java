@@ -48,7 +48,7 @@ public class MazeGameServerImpl2 implements MazeGameServer{
         public void run() {
             gameStatus = GAME_START;
             game = new Game(players, numOfTreasure, dimension);
-            // TODO: what happens if notifyGameStart gets blocked?
+            // notifyGameStart is non-blocking.
             for(Integer key : players.keySet()) {
                 Player player = players.get(key);
                 try {
