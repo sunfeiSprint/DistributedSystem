@@ -32,6 +32,10 @@ public class GameState implements Serializable {
         // TODO: randomly initialize the map
     }
 
+    public int getDimension() {
+        return dimension;
+    }
+
     public boolean isTargetReachable(Coordinate target) {
         // TODO: check if the target coordinate is reachable
         return true;

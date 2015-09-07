@@ -45,7 +45,7 @@ public class Game {
         return (gameState.getNumOfTreasure() == 0);
     }
 
-    public Coordinate getTargetCoordinate(Coordinate origin, char dir) {
+    public static Coordinate getTargetCoordinate(Coordinate origin, char dir) {
         // TODO: calculate the target coordinate from the origin and dir
         return null;
     }

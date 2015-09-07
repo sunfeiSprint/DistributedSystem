@@ -30,6 +30,7 @@ public class Coordinate {
 	public boolean equals(Object other) {
 		return x == ((Coordinate) other).x && y == ((Coordinate) other).y;
 	}
+
 	@Override
 	public String toString() {
 		return "[x=" + x + ", y=" + y + "]";
