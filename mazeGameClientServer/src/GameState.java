@@ -31,44 +31,18 @@ public class GameState implements Serializable, Cloneable {
     /** number of players */
     private int numOfPlayer;
 
-    //private
-
     public GameState(int dimension, int numOfTreasure, int numOfPlayer) {
         this.dimension = dimension;
         this.numOfTreasure = numOfTreasure;
         this.numOfPlayer = numOfPlayer;
         this.map = new char[dimension][dimension];
-        initializeMap();
-    }
-
-    private void initializeMap() {
         for(char[] row : map) {
             Arrays.fill(row, GameState.EMPTY);
         }
-        // randomly set the treasure location
-        Random random = new Random();
-        int limit = dimension * dimension;
-        for(int i = 0; i < numOfTreasure; i++) {
-            int r = random.nextInt(limit);
-            int x = r % dimension;
-            int y = r / dimension;
-            map[y][x] = TREASURE;
-            int key = hashKeyFromCoordinate(x, y);
-            if(numOfTreasurePerBlock.containsKey(key)) {
-                Integer value = numOfTreasurePerBlock.get(key);
-                value++;
-                numOfTreasurePerBlock.put(key, value);
-            } else {
-                numOfTreasurePerBlock.put(key, new Integer(1));
-            }
-        }
-        // randomly set the initial location of players
-        for(int i = 0; i < numOfPlayer; i++) {
-            int r = random.nextInt(limit);
-            int x = r % dimension;
-            int y = r / dimension;
-            map[y][x] = PLAYER;
-        }
+    }
+
+    public void setMap(char[][] map) {
+        this.map = map;
     }
 
     private int hashKeyFromCoordinate(int x, int y) {
@@ -88,18 +62,36 @@ public class GameState implements Serializable, Cloneable {
         	reachable = false;
         }
         if (reachable){
-        	if (map[locationX][locationY] == PLAYER){
+        	if (map[locationY][locationX] == PLAYER){
         		reachable = false;
         	}
         }
         return reachable;
     }
 
-    public void setMapLocation(int x, int y, char symbol) {
-        map[y][x] = symbol;
+    public void setBlockToCurPlayer(int x, int y) {
+        map[y][x] = CUR_PLAYER;
     }
 
-//    public void set
+    public void setBlockToPlayer(int x, int y) {
+        map[y][x] = PLAYER;
+    }
+
+    public boolean isEmptyBlock(int x, int y) {
+        return (map[y][x] == EMPTY);
+    }
+
+    public void setBlockToTreasure(int x, int y) {
+        map[y][x] = TREASURE;
+        int key = hashKeyFromCoordinate(x, y);
+        if(numOfTreasurePerBlock.containsKey(key)) {
+            Integer value = numOfTreasurePerBlock.get(key);
+            value++;
+            numOfTreasurePerBlock.put(key, value);
+        } else {
+            numOfTreasurePerBlock.put(key, new Integer(1));
+        }
+    }
 
     public boolean isTreasure(Coordinate target) {
         // check if the target position has treasure
@@ -140,7 +132,15 @@ public class GameState implements Serializable, Cloneable {
     }
     
     public GameState clone() throws CloneNotSupportedException {
-        return (GameState) super.clone();
+        GameState newState = new GameState(dimension, numOfTreasure, numOfPlayer);
+        char[][] newMap = new char[map.length][];
+        for (int i = 0; i < map.length; i++) {
+            newMap[i] = Arrays.copyOf(map[i], map[i].length);
+        }
+        newState.map = newMap;
+        // TODO: replace to clone?
+        newState.numOfTreasurePerBlock = this.numOfTreasurePerBlock;
+        return newState;
     }
 
     public static void main(String[] args) {

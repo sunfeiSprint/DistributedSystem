@@ -54,8 +54,9 @@ public class MazeGameServerImpl implements MazeGameServer{
             for(Integer key : players.keySet()) {
                 Player player = players.get(key);
                 try {
-//                    player.notifyGameStart(game.getGameStateForPlayer(player));
-                    player.notifyGameStart(game.getGameState());
+                    //TODO: replace to getGameStateForPlayer
+                    player.notifyGameStart(game.getGameStateForPlayer(player));
+//                    player.notifyGameStart(game.getGameState());
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -74,7 +75,8 @@ public class MazeGameServerImpl implements MazeGameServer{
             // The first player join in, notify game start in 20 seconds
             players.put(playerNum, new Player(playerNum, client));
             playerNum++;
-            executor.schedule(new GameInitializeTask(), 20, TimeUnit.SECONDS);
+            //TODO: change back to 20
+            executor.schedule(new GameInitializeTask(), 5, TimeUnit.SECONDS);
             gameStatus = GAME_PENDING_START;
             System.out.println("first client");
             return true;

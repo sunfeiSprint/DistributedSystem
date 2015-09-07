@@ -85,7 +85,12 @@ public class MazeGameClientImpl implements MazeGameClient {
 
     private boolean isValidInput(String input) {
         // TODO: check if input is valid
-        return true;
+        if(input.length() != 1)
+            return false;
+        char ch = input.toUpperCase().charAt(0);
+        if(ch == 'W' || ch == 'S' || ch == 'A' || ch == 'D')
+            return true;
+        else return false;
     }
 
     public static void main(String[] args) {
