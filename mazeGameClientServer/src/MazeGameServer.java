@@ -5,10 +5,8 @@ import java.rmi.RemoteException;
 
 public interface MazeGameServer extends Remote {
 	final static String NAME = "MazeGameServer";
-	final static boolean SUCCESS = true;
-	final static boolean FAILED = false;
 	
 	public boolean joinGame(MazeGameClient client) throws RemoteException;//client join game
-	public GameState move(int playerID, char dir) throws RemoteException;//player playerMove
+	public ServerMsg move(int playerID, char dir) throws RemoteException;//player playerMove
 	//startgame
 }

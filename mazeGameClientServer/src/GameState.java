@@ -7,7 +7,7 @@ import java.util.Random;
 /**
  * Created by Benze on 8/31/15.
  */
-public class GameState implements Serializable, Cloneable {
+public class GameState implements Serializable {
 
     public static final char TREASURE = '$';
 
@@ -54,19 +54,16 @@ public class GameState implements Serializable, Cloneable {
     }
 
     public boolean isTargetReachable(Coordinate target) {
-        boolean reachable = true;
         int locationX = target.getX();
         int locationY = target.getY();
         //check out of boundary
         if (locationX<0||locationY<0||locationX>=dimension||locationY>=dimension){
-        	reachable = false;
+        	return false;
         }
-        if (reachable){
-        	if (map[locationY][locationX] == PLAYER){
-        		reachable = false;
-        	}
+        if (map[locationY][locationX] == PLAYER){
+            return false;
         }
-        return reachable;
+        return true;
     }
 
     public void setBlockToCurPlayer(int x, int y) {
@@ -130,20 +127,21 @@ public class GameState implements Serializable, Cloneable {
         sb.append(System.lineSeparator());
         return sb.toString();
     }
-    
-    public GameState clone() throws CloneNotSupportedException {
-        GameState newState = new GameState(dimension, numOfTreasure, numOfPlayer);
-        char[][] newMap = new char[map.length][];
-        for (int i = 0; i < map.length; i++) {
-            newMap[i] = Arrays.copyOf(map[i], map[i].length);
-        }
-        newState.map = newMap;
-        // TODO: replace to clone?
-        newState.numOfTreasurePerBlock = this.numOfTreasurePerBlock;
-        return newState;
-    }
 
-    public static void main(String[] args) {
+//
+//    public GameState clone() throws CloneNotSupportedException {
+//        GameState newState = new GameState(dimension, numOfTreasure, numOfPlayer);
+//        char[][] newMap = new char[map.length][];
+//        for (int i = 0; i < map.length; i++) {
+//            newMap[i] = Arrays.copyOf(map[i], map[i].length);
+//        }
+//        newState.map = newMap;
+//        // TODO: replace to clone?
+//        newState.numOfTreasurePerBlock = this.numOfTreasurePerBlock;
+//        return newState;
+//    }
+
+//    public static void main(String[] args) {
 //        char[][] map = new char[10][10];
 //        for(char[] row : map) {
 //            Arrays.fill(row, GameState.EMPTY);
@@ -155,5 +153,5 @@ public class GameState implements Serializable, Cloneable {
 //        map[0][0] = PLAYER;
 //        GameState state = new GameState(10, 10);
 //        System.out.println(state);
-    }
+//    }
 }

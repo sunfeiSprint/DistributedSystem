@@ -40,42 +40,34 @@ public class Game {
                 }
             }
         }
-//        while(count < players.size()) {
-//            int r = random.nextInt(limit);
-//            int x = r % dimension;
-//            int y = r / dimension;
-//            if(!gameState.isEmptyBlock(x, y)) {
-//                continue;
-//            } else {
-//                count++;
-//                gameState.setBlockToPlayer(x, y);
-//
-//            }
-//        }
-
     }
 
-    public GameState getGameState() {
-        return gameState;
+    public ServerMsg createMsgForPlayer(Player player) {
+        ServerMsg serverMsg = new ServerMsg(gameState);
+        serverMsg.setPlayerPos(player.getCoordinate());
+        return serverMsg;
     }
 
-    public GameState getGameStateForPlayer(Player player) {
-    	GameState  gameSnapshot;
-		try {
-			gameSnapshot = gameState.clone();
-		    int X = player.getCoordinate().getX();
-		    int Y = player.getCoordinate().getY();
-//			gameSnapshot.setMapLocation(X, Y.CUR_PLAYER);
-            gameSnapshot.setBlockToCurPlayer(X, Y);
-	    	return gameSnapshot;
-		} catch (CloneNotSupportedException e) {			
-			e.printStackTrace();
-			return null;
-		}       
-    }
+//    public GameState getGameState() {
+//        return gameState;
+//    }
 
-    public GameState playerMove(int playerId, char dir) {
-        //Coordinates coordinates = player.getCoordinate();
+//    public GameState getGameStateForPlayer(Player player) {
+//    	GameState  gameSnapshot;
+//		try {
+//			gameSnapshot = gameState.clone();
+//		    int X = player.getCoordinate().getX();
+//		    int Y = player.getCoordinate().getY();
+////			gameSnapshot.setMapLocation(X, Y.CUR_PLAYER);
+//            gameSnapshot.setBlockToCurPlayer(X, Y);
+//	    	return gameSnapshot;
+//		} catch (CloneNotSupportedException e) {
+//			e.printStackTrace();
+//			return null;
+//		}
+//    }
+
+    public boolean playerMove(int playerId, char dir) {
         Player player = players.get(playerId);
         Coordinate playerPos = player.getCoordinate();
         Coordinate target = getTargetCoordinate(playerPos, dir);
@@ -87,10 +79,9 @@ public class Game {
             // update GameState and player coordinate
             gameState.playerMove(playerPos, target);
             player.setCoordinate(target);
+            return true;
         }
-        //TODO: replace to getGameStateForPlayer
-//        return getGameState();
-        return getGameStateForPlayer(player);
+        return false;
     }
 
     public boolean isGameOver() {
@@ -98,23 +89,6 @@ public class Game {
     }
 
     public static Coordinate getTargetCoordinate(Coordinate origin, char dir) {
-//        int newX = 0;
-//        int newY = 0;
-//    	int oldX = origin.getX();
-//    	int oldY = origin.getY();
-//    	Coordinate newCoordinate = new Coordinate(oldX, oldY);
-//    	switch(dir){
-//    		case 'S':
-//    			newY = oldY + 1;
-//    		case 'N':
-//    			newY = oldY - 1;
-//    		case 'E':
-//    			newX = oldX - 1;
-//    		case 'W':
-//    			newX = oldX + 1;
-//    	}
-//        newCoordinate.setX(newX);
-//        newCoordinate.setY(newY);
         int newX = origin.getX();
         int newY = origin.getY();
         switch (dir) {

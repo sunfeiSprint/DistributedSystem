@@ -1,5 +1,6 @@
 import java.rmi.AccessException;
 import java.rmi.AlreadyBoundException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -49,18 +50,42 @@ public class MazeGameServerImpl implements MazeGameServer{
             System.out.println("game start");
             gameStatus = GAME_START;
             game = new Game(players, numOfTreasure, dimension);
-            System.out.println("map initialized");
             // notifyGameStart is non-blocking.
             for(Integer key : players.keySet()) {
                 Player player = players.get(key);
                 try {
-                    //TODO: replace to getGameStateForPlayer
-                    player.notifyGameStart(game.getGameStateForPlayer(player));
-//                    player.notifyGameStart(game.getGameState());
+                    player.notifyGameStart(game.createMsgForPlayer(player));
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
             }
+        }
+    }
+
+    private class GameEndTask implements Runnable {
+
+        @Override
+        public void run() {
+            System.out.println("game end");
+            // notifyGameEnd
+            for(Integer key : players.keySet()) {
+                Player player = players.get(key);
+                try {
+                    player.notifyGameEnd(game.createMsgForPlayer(player));
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            try {
+                rmiRegistry.unbind(MazeGameServer.NAME);
+                UnicastRemoteObject.unexportObject(MazeGameServerImpl.this, false);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            } catch (NotBoundException e) {
+                e.printStackTrace();
+            }
+            executor.shutdown();
         }
     }
 
@@ -93,13 +118,20 @@ public class MazeGameServerImpl implements MazeGameServer{
     }
 
     @Override
-    public GameState move(int playerID, char dir) throws RemoteException {
-        GameState state = game.playerMove(playerID, dir);
-        if(game.isGameOver()) {
-            // TODO: what happens if game is over
-            gameStatus = GAME_END;
+    public ServerMsg move(int playerID, char dir) throws RemoteException {
+        if(gameStatus == GAME_START) {
+            if(game.playerMove(playerID, dir)) {
+                if (game.isGameOver()) {
+                    // TODO: what happens if game is over
+                    gameStatus = GAME_END;
+                    executor.execute(new GameEndTask());
+                }
+            }
+            return game.createMsgForPlayer(players.get(playerID));
+        } else {
+            // TODO: receive move request when game is over, notify game over
+            return game.createMsgForPlayer(players.get(playerID));
         }
-        return state;
     }
 
     public static void main(String[] args) {
