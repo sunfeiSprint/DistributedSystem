@@ -14,7 +14,9 @@ public interface P2PMazeGameServerClient extends Remote {
 
 	public void update(int id, char dir, int playerClock) throws RemoteException;
 
-	public void notifyStart(int id, GameState state) throws RemoteException;
+	public void notifyStart(int id, ServerMsg msg) throws RemoteException;
 	
-	public void notifyEnd(GameState state) throws RemoteException;
+	public void notifyEnd(ServerMsg msg) throws RemoteException;
+    
+	public void heartBeat() throws RemoteException;//if more 1 sec, backup become primary
 }
