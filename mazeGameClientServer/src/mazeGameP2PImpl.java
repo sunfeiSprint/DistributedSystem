@@ -143,8 +143,12 @@ public class mazeGameP2PImpl implements P2PMazeGameServerClient{
 		}
 		
 		try {
-			//TODO read from keyboard input
-			String host = "localhost";
+			String host;//read host from keyboard input
+			if (isFirstPlayer){
+				 host = args[2];
+			}else{
+				 host = args[1];
+			}		
             Registry registry = LocateRegistry.getRegistry(host, REGISTRY_PORT);
             P2PMazeGameServerClient server = (P2PMazeGameServerClient) registry.lookup(P2PMazeGameServerClient.NAME);
             mazeGameP2PImpl player = new mazeGameP2PImpl(Thread.currentThread());
