@@ -46,9 +46,17 @@ public class Player {
     public void notifyGameStart(ServerMsg msg) throws RemoteException {
         clientRef.notifyStart(playerID, msg);
     }
+    
+    public void p2pNotifyGameStart(ServerMsg msg) throws RemoteException {
+    	p2pClientRef.p2pNotifyStart(playerID, msg);
+    }
 
     public void notifyGameEnd(ServerMsg msg) throws RemoteException {
         clientRef.notifyEnd(msg);
+    }
+    
+    public void p2pNotifyGameEnd(ServerMsg msg) throws RemoteException {
+    	p2pClientRef.p2pNotifyEnd(msg);
     }
 
 //	@Override

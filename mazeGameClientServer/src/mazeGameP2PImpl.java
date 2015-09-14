@@ -67,7 +67,7 @@ public class mazeGameP2PImpl implements P2PMazeGameServerClient{
             for(Integer key : players.keySet()) {
                 Player player = players.get(key);
                 try {
-                    player.notifyGameStart(game.createMsgForPlayer(player));
+                	player.p2pNotifyGameStart(game.createMsgForPlayer(player));
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -84,7 +84,7 @@ public class mazeGameP2PImpl implements P2PMazeGameServerClient{
             for(Integer key : players.keySet()) {
                 Player player = players.get(key);
                 try {
-                    player.notifyGameEnd(game.createMsgForPlayer(player));
+                    player.p2pNotifyGameEnd(game.createMsgForPlayer(player));
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -115,8 +115,8 @@ public class mazeGameP2PImpl implements P2PMazeGameServerClient{
 	public static void main(String[] args) {
 		if (args.length < 1) {
 			System.err.println("Usage note:");
-			System.err.println("java MGP2PImpl host [N] [hostAddr] for the first player");
-			System.err.println("java MGP2PImpl player [hostAddr] for the other players");
+			System.err.println("java mazeGameP2PImpl host [N] [numTreasure] [hostAddr] for the first player");
+			System.err.println("java mazeGameP2PImpl player [hostAddr] for the other players");
 		}
 		
 		isFirstPlayer = args[0].equals("host") ? true : false;
@@ -124,14 +124,14 @@ public class mazeGameP2PImpl implements P2PMazeGameServerClient{
 		P2PMazeGameServerClient serverClient = null;
 		
 		if (isFirstPlayer) {//if it is the host, create server
-			int dimension = Integer.valueOf(args[0]);
-	        int numOfTreasure = Integer.valueOf(args[1]);
+			int dimension = Integer.valueOf(args[1]);
+	        int numOfTreasure = Integer.valueOf(args[2]);
 	        try {
 	        	mazeGameP2PImpl server = new mazeGameP2PImpl(dimension, numOfTreasure);
 	        	P2PMazeGameServerClient stub = (P2PMazeGameServerClient) UnicastRemoteObject.exportObject(server, 0);
 	            // Bind the remote object's stub in the registry
 	            rmiRegistry = LocateRegistry.createRegistry(REGISTRY_PORT);
-	            rmiRegistry.bind("MazeGameServer", stub);
+	            rmiRegistry.bind(P2PMazeGameServerClient.NAME, stub);
 	            System.out.println("Server ready");
 	        } catch (AccessException e) {
 	            e.printStackTrace();
@@ -140,12 +140,12 @@ public class mazeGameP2PImpl implements P2PMazeGameServerClient{
 	        } catch (AlreadyBoundException e) {
 	            e.printStackTrace();
 	        }
-		}
+		}else{
 		
 		try {
 			String host;//read host from keyboard input
 			if (isFirstPlayer){
-				 host = args[2];
+				 host = args[3];
 			}else{
 				 host = args[1];
 			}		
@@ -176,6 +176,7 @@ public class mazeGameP2PImpl implements P2PMazeGameServerClient{
             // interrupted when waiting for game start
             e.printStackTrace();
         }
+		}
 		
 	}
 
@@ -186,7 +187,7 @@ public class mazeGameP2PImpl implements P2PMazeGameServerClient{
             players.put(playerNum, new Player(playerNum, client));
             playerNum++;
             //TODO: change back to 20
-            executor.schedule(new GameInitializeTask(), 5, TimeUnit.SECONDS);
+            executor.schedule(new GameInitializeTask(), 10, TimeUnit.SECONDS);
             gameStatus = GAME_PENDING_START;
             System.out.println("first client");
             return true;
@@ -235,7 +236,7 @@ public class mazeGameP2PImpl implements P2PMazeGameServerClient{
 	}
 
 	@Override
-	public void notifyStart(int id, ServerMsg msg) throws RemoteException {
+	public void p2pNotifyStart(int id, ServerMsg msg) throws RemoteException {
 		gameStatus = GAME_START;
         this.playerId = playerId;
         this.serverMsg = msg;
@@ -250,7 +251,7 @@ public class mazeGameP2PImpl implements P2PMazeGameServerClient{
 	}
 
 	@Override
-	public void notifyEnd(ServerMsg msg) throws RemoteException {
+	public void p2pNotifyEnd(ServerMsg msg) throws RemoteException {
         gameStatus = GAME_END;
         serverMsg = msg;
         // interrupt the io thread
