@@ -48,6 +48,13 @@ public class Game {
         return serverMsg;
     }
 
+    public ServerMsg createGameOverMsgForPlayer(Player player) {
+        ServerMsg serverMsg = new ServerMsg(gameState);
+        serverMsg.setPlayerPos(player.getCoordinate());
+        serverMsg.setGameOver(true);
+        return serverMsg;
+    }
+
 //    public GameState getGameState() {
 //        return gameState;
 //    }

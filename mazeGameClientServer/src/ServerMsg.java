@@ -6,7 +6,25 @@ import java.io.Serializable;
 public class ServerMsg implements Serializable {
 
     /** the current game state */
-    GameState gameState;
+    private GameState gameState;
+
+    /** the current position of the player */
+    private Coordinate playerPos;
+
+    /** is game over */
+    private boolean isGameOver = false;
+
+    public ServerMsg(GameState gameState) {
+        this.gameState = gameState;
+    }
+
+    public boolean isGameOver() {
+        return isGameOver;
+    }
+
+    public void setGameOver(boolean isGameOver) {
+        this.isGameOver = isGameOver;
+    }
 
     public Coordinate getPlayerPos() {
         return playerPos;
@@ -14,13 +32,6 @@ public class ServerMsg implements Serializable {
 
     public GameState getGameState() {
         return gameState;
-    }
-
-    /** the current position of the player */
-    Coordinate playerPos;
-
-    public ServerMsg(GameState gameState) {
-        this.gameState = gameState;
     }
 
     public void setPlayerPos(Coordinate pos) {
