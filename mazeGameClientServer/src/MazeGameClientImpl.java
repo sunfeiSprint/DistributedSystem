@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.rmi.NoSuchObjectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -46,7 +47,6 @@ public class MazeGameClientImpl implements MazeGameClient {
         serverMsg = msg;
         // interrupt the io thread
         ioThread.interrupt();
-
     }
 
     public synchronized boolean isGameStarted() {
@@ -71,7 +71,9 @@ public class MazeGameClientImpl implements MazeGameClient {
                 if(input != null && isValidInput(input)) {
                     char dir = Character.toUpperCase(input.charAt(0));
                     serverMsg = server.move(playerId, dir);  // a blocking operation
-//                    System.out.println(gameState);
+                    if(serverMsg.isGameOver()) {
+                        gameStatus = GAME_END;
+                    }
                 } else {
                     System.out.println("error input.");
                 }
@@ -85,8 +87,12 @@ public class MazeGameClientImpl implements MazeGameClient {
         System.out.println(serverMsg.toString());
     }
 
-    private boolean isValidInput(String input) {
-        // TODO: check if input is valid
+    public void shutDown() throws NoSuchObjectException {
+        UnicastRemoteObject.unexportObject(this, true);
+    }
+
+    private static boolean isValidInput(String input) {
+        // check if input is valid
         if(input.length() != 1)
             return false;
         char ch = input.toUpperCase().charAt(0);
@@ -100,7 +106,6 @@ public class MazeGameClientImpl implements MazeGameClient {
         int port = Integer.parseInt(args[1]);
         try {
             Registry registry = LocateRegistry.getRegistry(host, port);
-//            Registry registry = LocateRegistry.getRegistry(host);
             MazeGameServer server = (MazeGameServer) registry.lookup("MazeGameServer");
             MazeGameClientImpl player = new MazeGameClientImpl(Thread.currentThread());
             UnicastRemoteObject.exportObject(player, 0);
@@ -115,8 +120,7 @@ public class MazeGameClientImpl implements MazeGameClient {
                 System.out.println("game start!");
                 player.gaming(server);
                 // clean exit
-                UnicastRemoteObject.unexportObject(player, false);
-
+                player.shutDown();
             }
         } catch (RemoteException e) {
             // join game failed

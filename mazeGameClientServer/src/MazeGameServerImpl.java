@@ -28,7 +28,6 @@ public class MazeGameServerImpl implements MazeGameServer{
 
     private volatile int gameStatus = GAME_INIT;
 
-    // TODO: may need to synchronize
     private Map<Integer, Player> players = new HashMap<Integer, Player>();
 
     private int playerNum = 0;
@@ -42,6 +41,7 @@ public class MazeGameServerImpl implements MazeGameServer{
 
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
+    /** controller of the maze game */
     private Game game;
 
     private class GameInitializeTask implements Runnable {
@@ -63,7 +63,6 @@ public class MazeGameServerImpl implements MazeGameServer{
     }
 
     private class GameEndTask implements Runnable {
-
         @Override
         public void run() {
             System.out.println("game end");
@@ -76,7 +75,6 @@ public class MazeGameServerImpl implements MazeGameServer{
                     e.printStackTrace();
                 }
             }
-
             try {
                 rmiRegistry.unbind(MazeGameServer.NAME);
                 UnicastRemoteObject.unexportObject(MazeGameServerImpl.this, false);
@@ -122,15 +120,18 @@ public class MazeGameServerImpl implements MazeGameServer{
         if(gameStatus == GAME_START) {
             if(game.playerMove(playerID, dir)) {
                 if (game.isGameOver()) {
-                    // TODO: what happens if game is over
+                    // game is over, send back game_over response and remove player
                     gameStatus = GAME_END;
+                    ServerMsg endMsg = game.createGameOverMsgForPlayer(players.get(playerID));
+                    // notify other players
                     executor.execute(new GameEndTask());
+                    return endMsg;
                 }
             }
             return game.createMsgForPlayer(players.get(playerID));
         } else {
-            // TODO: receive move request when game is over, notify game over
-            return game.createMsgForPlayer(players.get(playerID));
+            // receive move request when game is over, send back game over message
+            return game.createGameOverMsgForPlayer(players.get(playerID));
         }
     }
 
