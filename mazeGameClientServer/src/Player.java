@@ -8,6 +8,8 @@ import java.rmi.RemoteException;
 public class Player {
 
     private MazeGameClient clientRef;
+    
+    private P2PMazeGameServerClient p2pClientRef;
 
 	private int playerID;
 
@@ -26,6 +28,11 @@ public class Player {
 	public Player(int playerID, MazeGameClient clientRef) {
 		this.playerID = playerID;
         this.clientRef = clientRef;
+	}
+	
+	public Player(int playerID, P2PMazeGameServerClient p2pClientRef) {
+		this.playerID = playerID;
+        this.p2pClientRef = p2pClientRef;
 	}
 
     public Coordinate getCoordinate() {
