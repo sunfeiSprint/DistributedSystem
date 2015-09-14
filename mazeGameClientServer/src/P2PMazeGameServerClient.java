@@ -10,7 +10,7 @@ public interface P2PMazeGameServerClient extends Remote {
 		
 	public boolean joinP2PGame(P2PMazeGameServerClient client) throws RemoteException;
 
-	public GameState move(int id, char dir, int playerClock) throws RemoteException;
+	public GameState p2pMove(int id, char dir, int playerClock) throws RemoteException;
 
 	public void update(int id, char dir, int playerClock) throws RemoteException;
 
