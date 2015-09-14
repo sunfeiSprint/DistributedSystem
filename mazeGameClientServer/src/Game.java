@@ -1,3 +1,4 @@
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
@@ -8,12 +9,15 @@ public class Game {
 
     private GameState gameState;
 
-    private Map<Integer, Player> players;
+    private Map<Integer, Player> players = new HashMap<>();
 
-    public Game(Map<Integer, Player> players, int numOfTreasure, int dimension) {
-        this.players = players;
+    public Game(int numOfTreasure, int dimension) {
         gameState = new GameState(dimension, numOfTreasure, players.size());
         initializeGameState(numOfTreasure, dimension);
+    }
+
+    public void addPlayer(int id, Player player) {
+        players.put(id, player);
     }
 
     private void initializeGameState(int numOfTreasure, int dimension) {
@@ -42,15 +46,15 @@ public class Game {
         }
     }
 
-    public ServerMsg createMsgForPlayer(Player player) {
+    public ServerMsg createMsgForPlayer(int id) {
         ServerMsg serverMsg = new ServerMsg(gameState);
-        serverMsg.setPlayerPos(player.getCoordinate());
+        serverMsg.setPlayerPos(players.get(id).getCoordinate());
         return serverMsg;
     }
 
-    public ServerMsg createGameOverMsgForPlayer(Player player) {
+    public ServerMsg createGameOverMsgForPlayer(int id) {
         ServerMsg serverMsg = new ServerMsg(gameState);
-        serverMsg.setPlayerPos(player.getCoordinate());
+        serverMsg.setPlayerPos(players.get(id).getCoordinate());
         serverMsg.setGameOver(true);
         return serverMsg;
     }

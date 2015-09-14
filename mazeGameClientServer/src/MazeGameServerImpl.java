@@ -28,7 +28,8 @@ public class MazeGameServerImpl implements MazeGameServer{
 
     private volatile int gameStatus = GAME_INIT;
 
-    private Map<Integer, Player> players = new HashMap<Integer, Player>();
+//    private Map<Integer, Player> players = new HashMap<Integer, Player>();
+    private Map<Integer, MazeGameClient> clients = new HashMap<>();
 
     private int playerNum = 0;
 
@@ -49,12 +50,11 @@ public class MazeGameServerImpl implements MazeGameServer{
         public void run() {
             System.out.println("game start");
             gameStatus = GAME_START;
-            game = new Game(players, numOfTreasure, dimension);
             // notifyGameStart is non-blocking.
-            for(Integer key : players.keySet()) {
-                Player player = players.get(key);
+            for(Integer id : clients.keySet()) {
+                MazeGameClient client = clients.get(id);
                 try {
-                    player.notifyGameStart(game.createMsgForPlayer(player));
+                    client.notifyStart(id, game.createMsgForPlayer(id));
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -67,10 +67,10 @@ public class MazeGameServerImpl implements MazeGameServer{
         public void run() {
             System.out.println("game end");
             // notifyGameEnd
-            for(Integer key : players.keySet()) {
-                Player player = players.get(key);
+            for(Integer id : clients.keySet()) {
+                MazeGameClient client = clients.get(id);
                 try {
-                    player.notifyGameEnd(game.createMsgForPlayer(player));
+                    client.notifyEnd(game.createMsgForPlayer(id));
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -90,13 +90,15 @@ public class MazeGameServerImpl implements MazeGameServer{
     public MazeGameServerImpl(int dimension, int numOfTreasure) {
         this.numOfTreasure = numOfTreasure;
         this.dimension = dimension;
+        game = new Game(numOfTreasure, dimension);
     }
 
     @Override
     public synchronized boolean joinGame(MazeGameClient client) throws RemoteException {
         if(gameStatus == GAME_INIT) {
             // The first player join in, notify game start in 20 seconds
-            players.put(playerNum, new Player(playerNum, client));
+            clients.put(playerNum, client);
+            game.addPlayer(playerNum, new Player());
             playerNum++;
             //TODO: change back to 20
             executor.schedule(new GameInitializeTask(), 5, TimeUnit.SECONDS);
@@ -104,7 +106,8 @@ public class MazeGameServerImpl implements MazeGameServer{
             System.out.println("first client");
             return true;
         } else if (gameStatus == GAME_PENDING_START) {
-            players.put(playerNum, new Player(playerNum, client));
+            clients.put(playerNum, client);
+            game.addPlayer(playerNum, new Player());
             playerNum++;
             System.out.println("new client");
             return true;
@@ -122,16 +125,16 @@ public class MazeGameServerImpl implements MazeGameServer{
                 if (game.isGameOver()) {
                     // game is over, send back game_over response and remove player
                     gameStatus = GAME_END;
-                    ServerMsg endMsg = game.createGameOverMsgForPlayer(players.get(playerID));
+                    ServerMsg endMsg = game.createGameOverMsgForPlayer(playerID);
                     // notify other players
                     executor.execute(new GameEndTask());
                     return endMsg;
                 }
             }
-            return game.createMsgForPlayer(players.get(playerID));
+            return game.createMsgForPlayer(playerID);
         } else {
             // receive move request when game is over, send back game over message
-            return game.createGameOverMsgForPlayer(players.get(playerID));
+            return game.createGameOverMsgForPlayer(playerID);
         }
     }
 
