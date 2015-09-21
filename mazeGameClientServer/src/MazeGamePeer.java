@@ -25,5 +25,5 @@ public interface MazeGamePeer extends Remote {
 	
 	public void p2pNotifyEnd(ServerMsg msg) throws RemoteException;
     
-	public void heartBeat() throws RemoteException;//if more 1 sec, backup become primary
+//	public void heartBeat() throws RemoteException;//if more 1 sec, backup become primary
 }
