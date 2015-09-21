@@ -183,14 +183,14 @@ public class MazeGamePeerImpl implements MazeGamePeer {
         serverMsg = msg;
         // interrupt the io thread
         ioThread.interrupt();
-		
 	}
-	
-	@Override
-	public void heartBeat() throws RemoteException {
-		// TODO Auto-generated method stub
-		
-	}
+
+//
+//	@Override
+//	public void heartBeat() throws RemoteException {
+//		// TODO Auto-generated method stub
+//
+//	}
 
     private boolean isValidInput(String input) {
         // TODO: check if input is valid
