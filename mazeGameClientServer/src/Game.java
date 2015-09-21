@@ -9,11 +9,15 @@ public class Game {
 
     private GameState gameState;
 
-    private Map<Integer, Player> players = new HashMap<>();
+	private Map<Integer, Player> players = new HashMap<>();
 
     public Game(int numOfTreasure, int dimension) {
         gameState = new GameState(dimension, numOfTreasure, players.size());
         initializeGameState(numOfTreasure, dimension);
+    }
+    
+    public Game(GameState passInGameStatus){
+    	this.gameState = passInGameStatus;
     }
 
     public void addPlayer(int id, Player player) {
@@ -98,6 +102,15 @@ public class Game {
     public boolean isGameOver() {
         return (gameState.getNumOfTreasure() == 0);
     }
+    
+    public GameState getGameState() {
+		return gameState;
+	}
+
+	public void setGameState(GameState gameState) {
+		this.gameState = gameState;
+	}
+    
 
     public static Coordinate getTargetCoordinate(Coordinate origin, char dir) {
         int newX = origin.getX();

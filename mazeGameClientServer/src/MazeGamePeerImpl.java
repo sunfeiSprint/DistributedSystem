@@ -55,6 +55,11 @@ public class MazeGamePeerImpl implements MazeGamePeer {
     /** if the current peer is backup, promote itself to primary when primary dies */
     private boolean isBackupServer;
 
+    MazeGamePeer server;
+    
+    MazeGamePeer backupServer;
+    
+    int primarySeverId, backupServerId;
 	
     private class GameInitializeTask implements Runnable {
         @Override
@@ -65,7 +70,10 @@ public class MazeGamePeerImpl implements MazeGamePeer {
             for(Integer id : peers.keySet()) {
                 MazeGamePeer peer = peers.get(id);
                 try {
-                	peer.p2pNotifyStart(id, game.createMsgForPlayer(id));
+                	primarySeverId = playerId; 
+                	backupServerId = playerId + 1;
+                	peers.get(backupServerId).setAsBackupServer(game.getGameState(), peers);
+                	peer.p2pNotifyStart(id, game.createMsgForPlayer(id)); 
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
@@ -142,6 +150,7 @@ public class MazeGamePeerImpl implements MazeGamePeer {
                     executor.execute(new GameEndTask());
                     return endMsg;
                 }
+                backupServer.updateBackupState(this.game.getGameState());//if player successfully moved, updated backup
             }
             return game.createMsgForPlayer(playerID);
         } else {
@@ -152,17 +161,26 @@ public class MazeGamePeerImpl implements MazeGamePeer {
 
     @Override
     public void updateBackupState(GameState state) throws RemoteException {
-
+    	if (this.game == null){
+    		this.game = new Game(state);
+    	}else{
+    		this.game.setGameState(state);
+    	}
     }
 
     @Override
     public boolean setAsBackupServer(GameState state, Map<Integer, MazeGamePeer> peerRefs) throws RemoteException {
-        return false;
+    	this.peers = peerRefs;//set client reference
+    	game = new Game(state);
+        this.isBackupServer = true; 
+    	System.err.println("Player " + this.playerId + " is now Backup Server");   	
+    	return true;
     }
 
     @Override
-    public void broadcastNewPrimary(MazeGamePeer primary, GameState updateState) {
-
+    public void broadcastNewPrimary(MazeGamePeer primary, ServerMsg serverMsg) {
+    	this.server = primary;
+    	System.out.println(serverMsg.toString());
     }
 
 	@Override
@@ -202,7 +220,7 @@ public class MazeGamePeerImpl implements MazeGamePeer {
         else return false;
     }
     
-    public void gaming(MazeGamePeer server) {
+    public void gaming() {
         // when game is not end, print out game states and wait for user input
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
@@ -244,9 +262,6 @@ public class MazeGamePeerImpl implements MazeGamePeer {
         return (GAME_END == gameStatus);
     }
 
-	private void becomeBackupServer() {
-		System.err.println("Player " + playerId + " is now Backup Server");
-	}
 
     public static void startAsHost(int dimension, int numOfTreasure) {
         try {
@@ -281,7 +296,7 @@ public class MazeGamePeerImpl implements MazeGamePeer {
                     }
                 }
                 System.out.println("game start!");
-                player.gaming(server);
+                player.gaming();
                 // clean exit
                 player.shutDown();
             }
@@ -295,6 +310,45 @@ public class MazeGamePeerImpl implements MazeGamePeer {
             // interrupted when waiting for game start
             e.printStackTrace();
         }
+    }
+    
+    public void onPrimaryServerDie() throws RemoteException {//this method should only executed by backup
+    	//promote itself to primary
+    	this.isBackupServer = false;
+    	this.isPrimaryServer = true;
+    	
+    	//set backupServer
+    	for (Integer id : peers.keySet()){
+    		if (id == primarySeverId || id == backupServerId){
+    			continue;
+    		}else{
+    			peers.get(id).setAsBackupServer(game.getGameState(), peers);
+    			this.primarySeverId = this.playerId;
+    			this.backupServerId = id;		
+    		}
+    	}
+    	//broadCast new primary
+    	for(Integer id : peers.keySet()) {
+    		if (id == primarySeverId){
+    			continue;
+    		}else{
+    			peers.get(id).broadcastNewPrimary(this, game.createMsgForPlayer(id));
+    		}    		
+    	}    	
+    }
+    
+    public void onBackupServerDie() throws RemoteException {//this method should only executed by primary
+    	//set backupServer
+    	for (Integer id : peers.keySet()){
+    		if (id == primarySeverId || id == backupServerId){
+    			continue;
+    		}else{
+    			peers.get(id).setAsBackupServer(game.getGameState(), peers);
+    			this.backupServerId = id;
+    			
+    		}
+    	}
+    
     }
 
     public static void main(String[] args) {

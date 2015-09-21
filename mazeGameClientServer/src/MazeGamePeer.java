@@ -19,7 +19,7 @@ public interface MazeGamePeer extends Remote {
     // TODO: if new backup server is down, re-select a new one
     public boolean setAsBackupServer(GameState state, Map<Integer, MazeGamePeer> peerRefs) throws RemoteException;
 
-    public void broadcastNewPrimary(MazeGamePeer primary, GameState updateState);
+    public void broadcastNewPrimary(MazeGamePeer primary, ServerMsg serverMsg);
 
 	public void p2pNotifyStart(int id, ServerMsg msg) throws RemoteException;
 	
