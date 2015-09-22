@@ -1,17 +1,12 @@
 
+import java.io.Serializable;
 import java.rmi.RemoteException;
 
 /**
  * @author Sun Fei
  *
  */
-public class Player {
-
-    private MazeGameClient clientRef;
-    
-    private MazeGamePeer p2pClientRef;
-
-	private int playerID;
+public class Player implements Serializable{
 
     private Coordinate coordinate = new Coordinate(0, 0);
 
@@ -27,16 +22,6 @@ public class Player {
 
     public Player() {}
 
-//	public Player(int playerID, MazeGameClient clientRef) {
-//		this.playerID = playerID;
-//        this.clientRef = clientRef;
-//	}
-	
-	public Player(int playerID, MazeGamePeer p2pClientRef) {
-		this.playerID = playerID;
-        this.p2pClientRef = p2pClientRef;
-	}
-
     public Coordinate getCoordinate() {
         return coordinate;
     }
@@ -45,25 +30,5 @@ public class Player {
         this.coordinate = coordinate;
     }
 
-//    public void notifyGameStart(ServerMsg msg) throws RemoteException {
-//        clientRef.notifyStart(playerID, msg);
-//    }
-//
-//    public void notifyGameEnd(ServerMsg msg) throws RemoteException {
-//        clientRef.notifyEnd(msg);
-//    }
-    
-    public void p2pNotifyGameStart(ServerMsg msg) throws RemoteException {
-    	p2pClientRef.p2pNotifyStart(playerID, msg);
-    }
-    
-    public void p2pNotifyGameEnd(ServerMsg msg) throws RemoteException {
-    	p2pClientRef.p2pNotifyEnd(msg);
-    }
 
-//	@Override
-//	public String toString() {
-//		return "Player [playerID=" + playerID + ", locationX=" + locationX + ", locationY=" + locationY
-//				+ ", numCollectedTreasure=" + numCollectedTreasure + "]";
-//	}
 }

@@ -26,13 +26,13 @@ public class ServerMsg implements Serializable {
         this.isGameOver = isGameOver;
     }
 
-    public Coordinate getPlayerPos() {
-        return playerPos;
-    }
-
-    public GameState getGameState() {
-        return gameState;
-    }
+//    public Coordinate getPlayerPos() {
+//        return playerPos;
+//    }
+//
+//    public GameState getGameState() {
+//        return gameState;
+//    }
 
     public void setPlayerPos(Coordinate pos) {
         this.playerPos = pos;
@@ -41,10 +41,23 @@ public class ServerMsg implements Serializable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        gameState.setBlockToCurPlayer(playerPos.getX(), playerPos.getY());
-        sb.append(gameState.toString());
-        // recover state
-        gameState.setBlockToPlayer(playerPos.getX(), playerPos.getY());
+        char[][] map = gameState.getMap();
+        int numOfRows = map.length;
+        int numOfColumns = map[0].length;
+        sb.append(System.lineSeparator());
+        for(int i = 0; i < numOfRows; i++) {
+            for(int j = 0; j < numOfColumns; j++) {
+                sb.append('|');
+                if(i == playerPos.getY() && j == playerPos.getX()) {
+                    sb.append(GameState.CUR_PLAYER);
+                } else {
+                    sb.append(map[i][j]);
+                }
+            }
+            sb.append('|');
+            sb.append(System.lineSeparator());
+        }
+        sb.append(System.lineSeparator());
         return sb.toString();
     }
 }

@@ -28,22 +28,30 @@ public class GameState implements Serializable {
     /** the dimension of map */
     private int dimension;
 
-    /** number of players */
-    private int numOfPlayer;
+    private  Map<Integer, Player> players = new HashMap<>();
 
-    public GameState(int dimension, int numOfTreasure, int numOfPlayer) {
+    public GameState(int dimension, int numOfTreasure) {
         this.dimension = dimension;
         this.numOfTreasure = numOfTreasure;
-        this.numOfPlayer = numOfPlayer;
         this.map = new char[dimension][dimension];
         for(char[] row : map) {
             Arrays.fill(row, GameState.EMPTY);
         }
     }
 
-    public void setMap(char[][] map) {
-        this.map = map;
+    public void addPlayer(int id, Player player) {
+        players.put(id, player);
     }
+
+    public Map<Integer, Player> getPlayers() {
+        return players;
+    }
+
+    public Player getPlayer(int id) {
+        return players.get(id);
+    }
+
+    public char[][] getMap() { return map; }
 
     private int hashKeyFromCoordinate(int x, int y) {
         return y * dimension + x;
@@ -108,24 +116,6 @@ public class GameState implements Serializable {
 
     public int getNumOfTreasure() {
         return numOfTreasure;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        int numOfRows = map.length;
-        int numOfColumns = map[0].length;
-        sb.append(System.lineSeparator());
-        for(int i = 0; i < numOfRows; i++) {
-            for(int j = 0; j < numOfColumns; j++) {
-                sb.append('|');
-                sb.append(map[i][j]);
-            }
-            sb.append('|');
-            sb.append(System.lineSeparator());
-        }
-        sb.append(System.lineSeparator());
-        return sb.toString();
     }
 
 //

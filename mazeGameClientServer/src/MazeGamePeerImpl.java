@@ -1,40 +1,29 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.rmi.AccessException;
-import java.rmi.AlreadyBoundException;
 import java.rmi.NoSuchObjectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-
-
 public class MazeGamePeerImpl implements MazeGamePeer {
 	
-    private static Registry rmiRegistry;
-
-    private final int GAME_INIT = 0;
-
-    private final int GAME_PENDING_START = 1;
-
-    private final int GAME_START = 2;
-
-    private final int GAME_END = 3;
-
     private volatile int gameStatus = GAME_INIT;
 
-    private Map<Integer, MazeGamePeer> peers = new HashMap<>();
+    private Map<Integer, MazeGamePeer> peers;
 	
     private int playerNum = 0;
 
+    // test registry
     private static final int REGISTRY_PORT = 8888;
 
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
@@ -47,36 +36,55 @@ public class MazeGamePeerImpl implements MazeGamePeer {
 
     private ServerMsg serverMsg;
     
-    private static boolean isFirstPlayer;
-
     /** if the current peer is primary, rmi request is not needed */
-	private boolean isPrimaryServer;
+	private boolean isPrimaryServer = false;
 
     /** if the current peer is backup, promote itself to primary when primary dies */
-    private boolean isBackupServer;
+    //private boolean isBackupServer;
 
-    MazeGamePeer server;
+    private MazeGamePeer primaryServer;
     
-    MazeGamePeer backupServer;
+    private MazeGamePeer backupServer = null;
     
-    int primarySeverId, backupServerId;
+    int primarySeverId = -1, backupServerId = -1;
 	
     private class GameInitializeTask implements Runnable {
         @Override
         public void run() {
-            System.out.println("game start");
+//            System.out.println("game start");
+            game.initializeGameState();
             gameStatus = GAME_START;
-            // notifyGameStart is non-blocking.
-            for(Integer id : peers.keySet()) {
-                MazeGamePeer peer = peers.get(id);
-                try {
-                	primarySeverId = playerId; 
-                	backupServerId = playerId + 1;
-                	peers.get(backupServerId).setAsBackupServer(game.getGameState(), peers);
-                	peer.p2pNotifyStart(id, game.createMsgForPlayer(id)); 
-                } catch (RemoteException e) {
-                    e.printStackTrace();
+            primarySeverId = playerId;
+            backupServerId = playerId + 1;
+            backupServer = peers.get(backupServerId);
+            try {
+                backupServer.setAsBackupServer(primarySeverId, game.getGameState(), peers);
+                // notifyGameStart is non-blocking.
+                for(Integer id : peers.keySet()) {
+                    if(id != playerId) {
+                        peers.get(id).notifyStart(id, game.createMsgForPlayer(id));
+                    }
                 }
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+            // starts a thread to periodically ping backup server
+            executor.scheduleAtFixedRate(new Runnable() {
+                @Override
+                public void run() {
+                    if(backupServer != null) {
+                        try {
+                            backupServer.heartBeat();
+                        } catch (RemoteException e) {
+                            // backup server has died
+                            onBackupServerDie();
+                        }
+                    }
+                }
+            }, 2, 2, TimeUnit.SECONDS);
+            // wake up the current primary server
+            synchronized (MazeGamePeerImpl.this) {
+                MazeGamePeerImpl.this.notifyAll();
             }
         }
     }
@@ -84,51 +92,194 @@ public class MazeGamePeerImpl implements MazeGamePeer {
     private class GameEndTask implements Runnable {
         @Override
         public void run() {
-            System.out.println("game end");
-            // notifyGameEnd
             for(Integer id : peers.keySet()) {
-                MazeGamePeer peer = peers.get(id);
-                try {
-                    peer.p2pNotifyEnd(game.createMsgForPlayer(id));
-                } catch (RemoteException e) {
-                    e.printStackTrace();
+                if(id != playerId) {
+                    try {
+                        peers.get(id).notifyEnd(game.createGameOverMsgForPlayer(id));
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
-            // TODO: revisit exit logic
-            try {
-                //rmiRegistry.unbind(MazeGameServer.NAME);
-                UnicastRemoteObject.unexportObject(MazeGamePeerImpl.this, false);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
-            executor.shutdown();
+            // interrupt the current io thread on primary server
+            ioThread.interrupt();
         }
     }
 
-	public MazeGamePeerImpl(int dimension, int numOfTreasure) {
+	public MazeGamePeerImpl(int dimension, int numOfTreasure, Thread ioThread) {
         game = new Game(numOfTreasure, dimension);
+        this.ioThread = ioThread;
     }
 	
-	public MazeGamePeerImpl(Thread thread) {
-		this.ioThread = thread;
+	public MazeGamePeerImpl(Thread ioThread) {
+		this.ioThread = ioThread;
 	}
 
-	@Override
-	public boolean joinP2PGame(MazeGamePeer peer) throws RemoteException {
+    public void setAsPrimaryServer() {
+        peers = new HashMap<>();
+        playerId = playerNum;
+        isPrimaryServer = true;
+        addPeer(this);
+    }
+
+    public void setPrimaryServer(MazeGamePeer peer) {
+        primaryServer = peer;
+    }
+
+    private void addPeer(MazeGamePeer peer) {
+        peers.put(playerNum, peer);
+        game.addPlayer(playerNum, new Player());
+        playerNum++;
+    }
+
+    private boolean isValidInput(String input) {
+        // check if input is valid
+        if(input.length() != 1)
+            return false;
+        char ch = input.toUpperCase().charAt(0);
+        return (ch == 'W' || ch == 'S' || ch == 'A' || ch == 'D' || ch == ' ');
+    }
+    
+    public void gaming() {
+        System.out.println("************Game Start**************");
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        while(!isGameEnd()) {
+            // when game is not end, print out game states and wait for user input
+            if(isPrimaryServer) {
+                System.out.println(game.createMsgForPlayer(playerId));
+            } else {
+                System.out.println(serverMsg.toString());
+            }
+            try {
+                while(!br.ready()) {
+                    TimeUnit.MILLISECONDS.sleep(200);
+                }
+                String input = br.readLine();
+                if(input != null && isValidInput(input)) {
+                    char dir = Character.toUpperCase(input.charAt(0));
+                    if(isPrimaryServer) {
+                        game.playerMove(playerId, dir);
+                        backupServer.updateBackupState(game.getGameState());
+                        if(game.isGameOver()) {
+                            gameStatus = GAME_END;
+                            executor.execute(new GameEndTask());
+                        }
+                    } else {
+                        serverMsg = primaryServer.move(playerId, dir);  // a blocking operation
+                        if(serverMsg.isGameOver())
+                            gameStatus = GAME_END;
+                    }
+                } else {
+                    System.out.println("error input.");
+                }
+            } catch (RemoteException e) {
+                System.err.println("primary server has crashed, try again");
+            } catch (InterruptedException e) {
+                System.err.println("received interruption, game end.");
+            } catch (IOException e) {
+                System.err.println("io error.");
+            }
+        }
+        System.out.println("********Game End**********");
+        if(isPrimaryServer) {
+            game.createMsgForPlayer(playerId);
+        } else {
+            System.out.println(serverMsg.toString());
+        }
+    }
+    
+    public void shutDown() throws NoSuchObjectException {
+        // properly shutdown program
+//        System.out.println("Shut down");
+        UnicastRemoteObject.unexportObject(this, true);
+        executor.shutdownNow();
+    }
+    
+    public synchronized boolean isGameStarted() {
+        return (GAME_START == gameStatus);
+    }
+
+    public synchronized boolean isGameEnd() {
+        return (GAME_END == gameStatus);
+    }
+
+    private boolean createNewBackupServer() {
+        List<Integer> diedPeers = new ArrayList<>();
+        boolean success = false;
+        for(Integer id : peers.keySet()) {
+            if(id == primarySeverId)
+                continue;
+            try {
+                if(peers.get(id).setAsBackupServer(primarySeverId, game.getGameState(), peers)) {
+                    backupServerId = id;
+                    success = true;
+                    break;
+                }
+            } catch (RemoteException e) {
+                System.err.println("pick up a backup server that has died (peer: " + id + ")");
+                diedPeers.add(id);
+            }
+        }
+        // remove peers that have died
+        for(Integer diedPeer : diedPeers) {
+            peers.remove(diedPeer);
+        }
+        // TODO: synchronize the removed peers to backup server
+        return success;
+    }
+
+    public void onPrimaryServerDie()  {//this method should only executed by backup
+        //promote itself to primary
+        peers.remove(primarySeverId);
+        primarySeverId = playerId;
+        isPrimaryServer = true;
+
+        // set backupServer
+        createNewBackupServer();
+
+        //broadCast new primary
+        for(Integer id : peers.keySet()) {
+            if (id != playerId){
+                try {
+                    peers.get(id).notifyNewPrimary(this, game.createMsgForPlayer(id));
+                } catch (RemoteException e) {
+                    System.err.println("Peer :" + id + "has died");
+                }
+            }
+        }
+
+        executor.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                if(backupServer != null) {
+                    try {
+                        backupServer.heartBeat();
+                    } catch (RemoteException e) {
+                        // backup server has died
+                        onBackupServerDie();
+                    }
+                }
+            }
+        }, 2, 2, TimeUnit.SECONDS);
+    }
+
+    public void onBackupServerDie() {
+        //this method should only executed by primary
+        createNewBackupServer();
+    }
+
+    @Override
+    public boolean joinGame(MazeGamePeer peer) throws RemoteException {
         if(gameStatus == GAME_INIT) {
             // The first player join in, notify game start in 20 seconds
-            peers.put(playerNum, peer);
-            game.addPlayer(playerNum, new Player());
-            playerNum++;
+            addPeer(peer);
             // TODO: change back to 20
             executor.schedule(new GameInitializeTask(), 10, TimeUnit.SECONDS);
             gameStatus = GAME_PENDING_START;
             System.out.println("first client");
             return true;
         } else if (gameStatus == GAME_PENDING_START) {
-            peers.put(playerNum, peer);
-            game.addPlayer(playerNum, new Player());
-            playerNum++;
+            addPeer(peer);
             System.out.println("new client");
             return true;
         } else {
@@ -136,10 +287,10 @@ public class MazeGamePeerImpl implements MazeGamePeer {
             System.out.println("join refuse");
             return false;
         }
-	}
+    }
 
-	@Override
-	public ServerMsg p2pMove(int playerID, char dir) throws RemoteException {
+    @Override
+    public ServerMsg move(int playerID, char dir) throws RemoteException {
         if(gameStatus == GAME_START) {
             if(game.playerMove(playerID, dir)) {
                 if (game.isGameOver()) {
@@ -157,125 +308,94 @@ public class MazeGamePeerImpl implements MazeGamePeer {
             // receive move request when game is over, send back game over message
             return game.createGameOverMsgForPlayer(playerID);
         }
-	}
+    }
 
     @Override
     public void updateBackupState(GameState state) throws RemoteException {
-    	if (this.game == null){
-    		this.game = new Game(state);
-    	}else{
-    		this.game.setGameState(state);
-    	}
+        if (this.game == null){
+            this.game = new Game(state);
+        } else {
+            this.game.setGameState(state);
+        }
     }
 
     @Override
-    public boolean setAsBackupServer(GameState state, Map<Integer, MazeGamePeer> peerRefs) throws RemoteException {
-    	this.peers = peerRefs;//set client reference
-    	game = new Game(state);
-        this.isBackupServer = true; 
-    	System.err.println("Player " + this.playerId + " is now Backup Server");   	
-    	return true;
+    public boolean setAsBackupServer(int primarySeverId, GameState state, Map<Integer, MazeGamePeer> peerRefs) throws RemoteException {
+        //set client reference
+        this.peers = peerRefs;
+        game = new Game(state);
+//        this.isBackupServer = true;
+        this.primarySeverId = primarySeverId;
+        System.err.println("become Backup Server");
+        // start a new thread to call heartbeat
+        executor.schedule(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    while(true) {
+                        primaryServer.heartBeat();
+                        Thread.sleep(2000);
+                    }
+                } catch (RemoteException e) {
+                    // receive exception, the primary server has died
+                    onPrimaryServerDie();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }, 2, TimeUnit.SECONDS);
+        return true;
     }
 
     @Override
-    public void broadcastNewPrimary(MazeGamePeer primary, ServerMsg serverMsg) {
-    	this.server = primary;
-    	System.out.println(serverMsg.toString());
+    public void notifyNewPrimary(MazeGamePeer primary, ServerMsg serverMsg) {
+        this.primaryServer = primary;
+        this.serverMsg = serverMsg;
+        // TODO: may need to interrupt current blocked request
+//    	System.out.println(serverMsg.toString());
     }
 
-	@Override
-	public synchronized void p2pNotifyStart(int id, ServerMsg msg) throws RemoteException {
-		gameStatus = GAME_START;
+    @Override
+    public synchronized void notifyStart(int id, ServerMsg msg) throws RemoteException {
+        gameStatus = GAME_START;
         this.playerId = id;
         this.serverMsg = msg;
-
-		System.err.println("Notification from server. ID = " + id
-				+ " isPrimaryServer: " + isPrimaryServer);
-        
         this.notifyAll();
-	}
+    }
 
-	@Override
-	public synchronized void p2pNotifyEnd(ServerMsg msg) throws RemoteException {
+    @Override
+    public synchronized void notifyEnd(ServerMsg msg) throws RemoteException {
         gameStatus = GAME_END;
         serverMsg = msg;
         // interrupt the io thread
         ioThread.interrupt();
-	}
-
-//
-//	@Override
-//	public void heartBeat() throws RemoteException {
-//		// TODO Auto-generated method stub
-//
-//	}
-
-    private boolean isValidInput(String input) {
-        // TODO: check if input is valid
-        if(input.length() != 1)
-            return false;
-        char ch = input.toUpperCase().charAt(0);
-        if(ch == 'W' || ch == 'S' || ch == 'A' || ch == 'D' || ch == ' ')
-            return true;
-        else return false;
-    }
-    
-    public void gaming() {
-        // when game is not end, print out game states and wait for user input
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-
-        while(!isGameEnd()) {
-            System.out.println(serverMsg.toString());
-            try {
-                while(!br.ready()) {
-                    TimeUnit.MILLISECONDS.sleep(200);
-                }
-                String input = br.readLine();
-                if(input != null && isValidInput(input)) {
-                    char dir = Character.toUpperCase(input.charAt(0));
-                    serverMsg = server.p2pMove(playerId, dir);  // a blocking operation
-                    if(serverMsg.isGameOver()) {
-                        gameStatus = GAME_END;
-                    }
-                } else {
-                    System.out.println("error input.");
-                }
-            } catch (IOException e) {
-                System.err.println("io error.");
-            } catch (InterruptedException e) {
-                System.err.println("received interruption, game end.");
-            }
-        }
-        System.out.println("********Game End********");
-        System.out.println(serverMsg.toString());
-    }
-    
-    public void shutDown() throws NoSuchObjectException {
-        UnicastRemoteObject.unexportObject(this, true);
-    }
-    
-    public synchronized boolean isGameStarted() {
-        return (GAME_START == gameStatus);
     }
 
-    public synchronized boolean isGameEnd() {
-        return (GAME_END == gameStatus);
+    @Override
+    public boolean heartBeat() throws RemoteException {
+        return true;
     }
-
 
     public static void startAsHost(int dimension, int numOfTreasure) {
         try {
-            MazeGamePeerImpl server = new MazeGamePeerImpl(dimension, numOfTreasure);
-            MazeGamePeer stub = (MazeGamePeer) UnicastRemoteObject.exportObject(server, 0);
+            MazeGamePeerImpl maze = new MazeGamePeerImpl(dimension, numOfTreasure, Thread.currentThread());
+            maze.setAsPrimaryServer();
+            MazeGamePeer stub = (MazeGamePeer) UnicastRemoteObject.exportObject(maze, 0);
             // Bind the remote object's stub in the registry
-            rmiRegistry = LocateRegistry.createRegistry(REGISTRY_PORT);
-            rmiRegistry.bind(MazeGamePeer.NAME, stub);
-            System.out.println("Server ready");
-        } catch (AccessException e) {
+            Registry rmiRegistry = LocateRegistry.createRegistry(REGISTRY_PORT);
+            rmiRegistry.rebind(MazeGamePeer.NAME, stub);
+            System.out.println("Create new game, waiting for other players to join");
+            //maze.setPlayer
+            while(!maze.isGameStarted()) {
+                synchronized (maze) {
+                    maze.wait();
+                }
+            }
+            maze.gaming();
+            maze.shutDown();
+        }  catch (RemoteException e) {
             e.printStackTrace();
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        } catch (AlreadyBoundException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -286,16 +406,15 @@ public class MazeGamePeerImpl implements MazeGamePeer {
             MazeGamePeer server = (MazeGamePeer) registry.lookup(MazeGamePeer.NAME);
             MazeGamePeerImpl player = new MazeGamePeerImpl(Thread.currentThread());
             UnicastRemoteObject.exportObject(player, 0);
-            boolean success = server.joinP2PGame(player);
+            boolean success = server.joinGame(player);
             if(success) {
                 System.out.println("join game successfully, waiting for game start...");
+                player.setPrimaryServer(server);
                 while(!player.isGameStarted()) {
                     synchronized (player) {
                         player.wait();
-                        System.out.println("player weak up");
                     }
                 }
-                System.out.println("game start!");
                 player.gaming();
                 // clean exit
                 player.shutDown();
@@ -311,45 +430,6 @@ public class MazeGamePeerImpl implements MazeGamePeer {
             e.printStackTrace();
         }
     }
-    
-    public void onPrimaryServerDie() throws RemoteException {//this method should only executed by backup
-    	//promote itself to primary
-    	this.isBackupServer = false;
-    	this.isPrimaryServer = true;
-    	
-    	//set backupServer
-    	for (Integer id : peers.keySet()){
-    		if (id == primarySeverId || id == backupServerId){
-    			continue;
-    		}else{
-    			peers.get(id).setAsBackupServer(game.getGameState(), peers);
-    			this.primarySeverId = this.playerId;
-    			this.backupServerId = id;		
-    		}
-    	}
-    	//broadCast new primary
-    	for(Integer id : peers.keySet()) {
-    		if (id == primarySeverId){
-    			continue;
-    		}else{
-    			peers.get(id).broadcastNewPrimary(this, game.createMsgForPlayer(id));
-    		}    		
-    	}    	
-    }
-    
-    public void onBackupServerDie() throws RemoteException {//this method should only executed by primary
-    	//set backupServer
-    	for (Integer id : peers.keySet()){
-    		if (id == primarySeverId || id == backupServerId){
-    			continue;
-    		}else{
-    			peers.get(id).setAsBackupServer(game.getGameState(), peers);
-    			this.backupServerId = id;
-    			
-    		}
-    	}
-    
-    }
 
     public static void main(String[] args) {
         if (args.length < 1) {
@@ -358,9 +438,8 @@ public class MazeGamePeerImpl implements MazeGamePeer {
             System.err.println("java mazeGameP2PImpl player [hostAddr] for the other players");
         }
 
-        isFirstPlayer = args[0].equals("host") ? true : false;
-
-        if (isFirstPlayer) {//if it is the host, create server
+        if (args[0].equals("host")) {
+            //if it is the host, create primaryServer
             startAsHost(Integer.valueOf(args[1]), Integer.valueOf(args[2]));
         } else {
             startAsClient(args[1]);

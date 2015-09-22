@@ -9,10 +9,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * Created by Benze on 9/21/15.
@@ -94,7 +91,7 @@ public class HeartbeatTestingPeerImpl implements HeartbeatTestingPeer{
         @Override
         public void run() {
             // periodically receive heartbeat message and respond
-            clockExecutor.scheduleAtFixedRate(new Runnable() {
+            ScheduledFuture future = clockExecutor.scheduleAtFixedRate(new Runnable() {
                 @Override
                 public void run() {
                     if (hasReceivedHeartbeat()) {
@@ -139,7 +136,6 @@ public class HeartbeatTestingPeerImpl implements HeartbeatTestingPeer{
             HeartbeatConfiguration heartbeatConfig = new HeartbeatConfiguration(localHost,
                     socket.getLocalPort());
             executor.execute(new HeartbeatServer(socket));
-
             return heartbeatConfig;
         } catch (SocketException e) {
             e.printStackTrace();
@@ -153,8 +149,6 @@ public class HeartbeatTestingPeerImpl implements HeartbeatTestingPeer{
         // set up heartbeat socket
         try {
             DatagramSocket socket = new DatagramSocket(0);
-//            HeartbeatConfiguration config = new HeartbeatConfiguration(socket.getLocalAddress(),
-//                    socket.getLocalPort());
             HeartbeatConfiguration heartbeatConfiguration = peer.heartbeatConfig();
             executor.execute(new HeartbeatClient(socket, heartbeatConfiguration));
         } catch (SocketException e) {

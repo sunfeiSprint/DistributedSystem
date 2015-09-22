@@ -9,11 +9,8 @@ public class Game {
 
     private GameState gameState;
 
-	private Map<Integer, Player> players = new HashMap<>();
-
     public Game(int numOfTreasure, int dimension) {
-        gameState = new GameState(dimension, numOfTreasure, players.size());
-        initializeGameState(numOfTreasure, dimension);
+        gameState = new GameState(dimension, numOfTreasure);
     }
     
     public Game(GameState passInGameStatus){
@@ -21,26 +18,27 @@ public class Game {
     }
 
     public void addPlayer(int id, Player player) {
-        players.put(id, player);
+        gameState.addPlayer(id, player);
     }
 
-    private void initializeGameState(int numOfTreasure, int dimension) {
+    public void initializeGameState() {
         // randomly set the treasure location
         Random random = new Random();
         int limit = gameState.getDimension() * gameState.getDimension();
-        for(int i = 0; i < numOfTreasure; i++) {
+        for(int i = 0; i < gameState.getNumOfTreasure(); i++) {
             int r = random.nextInt(limit);
-            int x = r % dimension;
-            int y = r / dimension;
+            int x = r % gameState.getDimension();
+            int y = r / gameState.getDimension();
             gameState.setBlockToTreasure(x, y);
         }
         // randomly set the initial location of players
+        Map<Integer, Player> players = gameState.getPlayers();
         for(Integer key : players.keySet()) {
             Player player = players.get(key);
             while(true) {
                 int r = random.nextInt(limit);
-                int x = r % dimension;
-                int y = r / dimension;
+                int x = r % gameState.getDimension();
+                int y = r / gameState.getDimension();
                 if(gameState.isEmptyBlock(x, y)) {
                     gameState.setBlockToPlayer(x, y);
                     player.setCoordinate(new Coordinate(x, y));
@@ -52,13 +50,13 @@ public class Game {
 
     public ServerMsg createMsgForPlayer(int id) {
         ServerMsg serverMsg = new ServerMsg(gameState);
-        serverMsg.setPlayerPos(players.get(id).getCoordinate());
+        serverMsg.setPlayerPos(gameState.getPlayer(id).getCoordinate());
         return serverMsg;
     }
 
     public ServerMsg createGameOverMsgForPlayer(int id) {
         ServerMsg serverMsg = new ServerMsg(gameState);
-        serverMsg.setPlayerPos(players.get(id).getCoordinate());
+        serverMsg.setPlayerPos(gameState.getPlayer(id).getCoordinate());
         serverMsg.setGameOver(true);
         return serverMsg;
     }
@@ -83,7 +81,7 @@ public class Game {
 //    }
 
     public boolean playerMove(int playerId, char dir) {
-        Player player = players.get(playerId);
+        Player player = gameState.getPlayer(playerId);
         Coordinate playerPos = player.getCoordinate();
         Coordinate target = getTargetCoordinate(playerPos, dir);
         if(gameState.isTargetReachable(target)) {
