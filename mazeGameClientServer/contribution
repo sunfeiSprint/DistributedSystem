@@ -1,0 +1,72 @@
+
+Fill in the info and submit the softcopy together with your source code.
+
+------------------------------------------------------------
+
+What is your demo time slot (e.g., 14:30PM)? Answer: 11:15AM
+
+What programming language did you use? Answer: Java
+
+Roughly how many lines of code does your system have? Answer: 1200
+
+(above answer including client server version and testing source code)
+
+Do you use RMI or socket for your system? Answer (RMI/socket):RMI
+
+-------------------------------------------------------------
+
+What is Team Member 1's matriculation number (not nusnetid!)? 	
+
+Answer: A0134545
+
+What is Team Member 1's name (exactly as appeared as on IVLE)?
+
+Answer: Sun Fei
+
+How many lines of code (very roughly speaking) did Team Member 1 write?
+
+Answer: 500
+
+Which part of the assignment did Team Member 1 do?
+
+Answer: Design client server interface
+	
+	Game logic 
+	
+	Server side implementation
+
+	P2P implementation
+
+	Testing
+
+
+-------------------------------------------------------------
+
+What is Team Member 2's matriculation number (not nusnetid!)?
+
+Answer: A0134447
+
+What is Team Member 2's name (exactly as appeared as on IVLE)?
+
+Answer: Tang Benze
+
+How many lines of code (very roughly speaking) did Team Member 2 write?
+
+Answer: 700
+
+Which part of the assignment did Team Member 2 do?
+
+Answer: Design test case server interface
+
+	Game logic 	
+
+	Client Side implementation
+
+	P2P implementation
+
+	Testing source code
+
+	Testing
+
+
+--------------------------------------------------------------
