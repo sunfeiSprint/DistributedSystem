@@ -74,6 +74,10 @@ public class GameState implements Serializable {
         return true;
     }
 
+    public int getNumOfTreasureAt(int x, int y) {
+        return numOfTreasurePerBlock.get(hashKeyFromCoordinate(x, y));
+    }
+
     public void setBlockToCurPlayer(int x, int y) {
         map[y][x] = CUR_PLAYER;
     }
@@ -86,16 +90,17 @@ public class GameState implements Serializable {
         return (map[y][x] == EMPTY);
     }
 
-    public void setBlockToTreasure(int x, int y) {
+    public void setBlockToTreasure(int x, int y, int num) {
         map[y][x] = TREASURE;
         int key = hashKeyFromCoordinate(x, y);
-        if(numOfTreasurePerBlock.containsKey(key)) {
-            Integer value = numOfTreasurePerBlock.get(key);
-            value++;
-            numOfTreasurePerBlock.put(key, value);
-        } else {
-            numOfTreasurePerBlock.put(key, new Integer(1));
-        }
+        numOfTreasurePerBlock.put(key, num);
+//        if(numOfTreasurePerBlock.containsKey(key)) {
+//            Integer value = numOfTreasurePerBlock.get(key);
+//            value++;
+//            numOfTreasurePerBlock.put(key, value);
+//        } else {
+//            numOfTreasurePerBlock.put(key, new Integer(1));
+//        }
     }
 
     public boolean isTreasure(Coordinate target) {
@@ -103,9 +108,11 @@ public class GameState implements Serializable {
         return (map[target.getY()][target.getX()] == TREASURE);
     }
 
-    public void treasureCollected() {
+    public int treasureCollected(Coordinate target) {
         // TODO: assuming player collect only one treasure each time
-        numOfTreasure--;
+        int num = numOfTreasurePerBlock.get(hashKeyFromCoordinate(target.getX(), target.getY()));
+        numOfTreasure -= num;
+        return num;
     }
 
     public void playerMove(Coordinate origin, Coordinate target) {
@@ -118,30 +125,12 @@ public class GameState implements Serializable {
         return numOfTreasure;
     }
 
-//
-//    public GameState clone() throws CloneNotSupportedException {
-//        GameState newState = new GameState(dimension, numOfTreasure, numOfPlayer);
-//        char[][] newMap = new char[map.length][];
-//        for (int i = 0; i < map.length; i++) {
-//            newMap[i] = Arrays.copyOf(map[i], map[i].length);
-//        }
-//        newState.map = newMap;
-//        // TODO: replace to clone?
-//        newState.numOfTreasurePerBlock = this.numOfTreasurePerBlock;
-//        return newState;
-//    }
-
-//    public static void main(String[] args) {
-//        char[][] map = new char[10][10];
-//        for(char[] row : map) {
-//            Arrays.fill(row, GameState.EMPTY);
-//        }
-//        map[0][3] = TREASURE;
-//        map[2][5] = TREASURE;
-//        map[2][2] = OTHER_PLAYER;
-//        map[3][3] = OTHER_PLAYER;
-//        map[0][0] = PLAYER;
-//        GameState state = new GameState(10, 10);
-//        System.out.println(state);
-//    }
+    public String generateStatistics() {
+        StringBuilder sb = new StringBuilder();
+        for(Integer id : players.keySet()) {
+            sb.append("peer " + id + ": " + players.get(id).getNumOfTreasure());
+            sb.append(System.lineSeparator());
+        }
+        return sb.toString();
+    }
 }

@@ -24,7 +24,7 @@ public class MazeGameClientImpl implements MazeGameClient {
 
     private int playerId;
 
-    private ServerMsg serverMsg;
+    private GameMessage gameMessage;
 
     /** Main io thread for user input */
     private Thread ioThread;
@@ -34,17 +34,17 @@ public class MazeGameClientImpl implements MazeGameClient {
     }
 
     @Override
-    public synchronized void notifyStart(int playerId, ServerMsg msg) throws RemoteException {
+    public synchronized void notifyStart(int playerId, GameMessage msg) throws RemoteException {
         gameStatus = GAME_START;
         this.playerId = playerId;
-        this.serverMsg = msg;
+        this.gameMessage = msg;
         this.notifyAll();
     }
 
     @Override
-    public synchronized void notifyEnd(ServerMsg msg) throws RemoteException {
+    public synchronized void notifyEnd(GameMessage msg) throws RemoteException {
         gameStatus = GAME_END;
-        serverMsg = msg;
+        gameMessage = msg;
         // interrupt the io thread
         ioThread.interrupt();
     }
@@ -62,7 +62,7 @@ public class MazeGameClientImpl implements MazeGameClient {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
         while(!isGameEnd()) {
-            System.out.println(serverMsg.toString());
+            System.out.println(gameMessage.toString());
             try {
                 while(!br.ready()) {
                     TimeUnit.MILLISECONDS.sleep(200);
@@ -70,8 +70,8 @@ public class MazeGameClientImpl implements MazeGameClient {
                 String input = br.readLine();
                 if(input != null && isValidInput(input)) {
                     char dir = Character.toUpperCase(input.charAt(0));
-                    serverMsg = server.move(playerId, dir);  // a blocking operation
-                    if(serverMsg.isGameOver()) {
+                    gameMessage = server.move(playerId, dir);  // a blocking operation
+                    if(gameMessage.isGameOver()) {
                         gameStatus = GAME_END;
                     }
                 } else {
@@ -84,11 +84,12 @@ public class MazeGameClientImpl implements MazeGameClient {
             }
         }
         System.out.println("********Game End********");
-        System.out.println(serverMsg.toString());
+        System.out.println(gameMessage.toString());
     }
 
     public void shutDown() throws NoSuchObjectException {
         UnicastRemoteObject.unexportObject(this, true);
+
     }
 
     private static boolean isValidInput(String input) {

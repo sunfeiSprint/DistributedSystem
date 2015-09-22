@@ -49,6 +49,7 @@ public class MazeGameServerImpl implements MazeGameServer{
         @Override
         public void run() {
             System.out.println("game start");
+            game.initializeGameState();
             gameStatus = GAME_START;
             // notifyGameStart is non-blocking.
             for(Integer id : clients.keySet()) {
@@ -119,13 +120,13 @@ public class MazeGameServerImpl implements MazeGameServer{
     }
 
     @Override
-    public ServerMsg move(int playerID, char dir) throws RemoteException {
+    public GameMessage move(int playerID, char dir) throws RemoteException {
         if(gameStatus == GAME_START) {
             if(game.playerMove(playerID, dir)) {
                 if (game.isGameOver()) {
                     // game is over, send back game_over response and remove player
                     gameStatus = GAME_END;
-                    ServerMsg endMsg = game.createGameOverMsgForPlayer(playerID);
+                    GameMessage endMsg = game.createGameOverMsgForPlayer(playerID);
                     // notify other players
                     executor.execute(new GameEndTask());
                     return endMsg;

@@ -14,8 +14,8 @@ public class Player implements Serializable{
         return numOfTreasure;
     }
 
-    public void collectTreasure() {
-        numOfTreasure++;
+    public void collectTreasure(int num) {
+        numOfTreasure += num;
     }
 
     private int numOfTreasure = 0;

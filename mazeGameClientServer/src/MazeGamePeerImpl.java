@@ -34,7 +34,7 @@ public class MazeGamePeerImpl implements MazeGamePeer {
     
     private Thread ioThread;
 
-    private ServerMsg serverMsg;
+    private GameMessage gameMessage;
     
     /** if the current peer is primary, rmi request is not needed */
 	private boolean isPrimaryServer = false;
@@ -97,7 +97,8 @@ public class MazeGamePeerImpl implements MazeGamePeer {
                     try {
                         peers.get(id).notifyEnd(game.createGameOverMsgForPlayer(id));
                     } catch (RemoteException e) {
-                        e.printStackTrace();
+                        System.err.println("Peer " + id + " has died");
+//                        e.printStackTrace();
                     }
                 }
             }
@@ -148,7 +149,7 @@ public class MazeGamePeerImpl implements MazeGamePeer {
             if(isPrimaryServer) {
                 System.out.println(game.createMsgForPlayer(playerId));
             } else {
-                System.out.println(serverMsg.toString());
+                System.out.println(gameMessage.toString());
             }
             try {
                 while(!br.ready()) {
@@ -165,8 +166,8 @@ public class MazeGamePeerImpl implements MazeGamePeer {
                             executor.execute(new GameEndTask());
                         }
                     } else {
-                        serverMsg = primaryServer.move(playerId, dir);  // a blocking operation
-                        if(serverMsg.isGameOver())
+                        gameMessage = primaryServer.move(playerId, dir);  // a blocking operation
+                        if(gameMessage.isGameOver())
                             gameStatus = GAME_END;
                     }
                 } else {
@@ -182,9 +183,9 @@ public class MazeGamePeerImpl implements MazeGamePeer {
         }
         System.out.println("********Game End**********");
         if(isPrimaryServer) {
-            game.createMsgForPlayer(playerId);
+            System.out.println(game.createGameOverMsgForPlayer(playerId));
         } else {
-            System.out.println(serverMsg.toString());
+            System.out.println(gameMessage.toString());
         }
     }
     
@@ -207,17 +208,18 @@ public class MazeGamePeerImpl implements MazeGamePeer {
         List<Integer> diedPeers = new ArrayList<>();
         boolean success = false;
         for(Integer id : peers.keySet()) {
-            if(id == primarySeverId)
-                continue;
-            try {
-                if(peers.get(id).setAsBackupServer(primarySeverId, game.getGameState(), peers)) {
-                    backupServerId = id;
-                    success = true;
-                    break;
+            if(id != primarySeverId) {
+                try {
+                    if (peers.get(id).setAsBackupServer(primarySeverId, game.getGameState(), peers)) {
+                        backupServerId = id;
+                        backupServer = peers.get(backupServerId);
+                        success = true;
+                        break;
+                    }
+                } catch (RemoteException e) {
+                    System.err.println("pick up a backup server that has died (peer: " + id + ")");
+                    diedPeers.add(id);
                 }
-            } catch (RemoteException e) {
-                System.err.println("pick up a backup server that has died (peer: " + id + ")");
-                diedPeers.add(id);
             }
         }
         // remove peers that have died
@@ -229,6 +231,7 @@ public class MazeGamePeerImpl implements MazeGamePeer {
     }
 
     public void onPrimaryServerDie()  {//this method should only executed by backup
+        System.out.println("Become Primary Server");
         //promote itself to primary
         peers.remove(primarySeverId);
         primarySeverId = playerId;
@@ -265,6 +268,8 @@ public class MazeGamePeerImpl implements MazeGamePeer {
 
     public void onBackupServerDie() {
         //this method should only executed by primary
+        // remove died backup server
+        peers.remove(backupServerId);
         createNewBackupServer();
     }
 
@@ -290,13 +295,13 @@ public class MazeGamePeerImpl implements MazeGamePeer {
     }
 
     @Override
-    public ServerMsg move(int playerID, char dir) throws RemoteException {
+    public GameMessage move(int playerID, char dir) throws RemoteException {
         if(gameStatus == GAME_START) {
             if(game.playerMove(playerID, dir)) {
                 if (game.isGameOver()) {
                     // game is over, send back game_over response and remove player
                     gameStatus = GAME_END;
-                    ServerMsg endMsg = game.createGameOverMsgForPlayer(playerID);
+                    GameMessage endMsg = game.createGameOverMsgForPlayer(playerID);
                     // notify other players
                     executor.execute(new GameEndTask());
                     return endMsg;
@@ -348,25 +353,25 @@ public class MazeGamePeerImpl implements MazeGamePeer {
     }
 
     @Override
-    public void notifyNewPrimary(MazeGamePeer primary, ServerMsg serverMsg) {
+    public void notifyNewPrimary(MazeGamePeer primary, GameMessage gameMessage) {
         this.primaryServer = primary;
-        this.serverMsg = serverMsg;
+        this.gameMessage = gameMessage;
         // TODO: may need to interrupt current blocked request
 //    	System.out.println(serverMsg.toString());
     }
 
     @Override
-    public synchronized void notifyStart(int id, ServerMsg msg) throws RemoteException {
+    public synchronized void notifyStart(int id, GameMessage msg) throws RemoteException {
         gameStatus = GAME_START;
         this.playerId = id;
-        this.serverMsg = msg;
+        this.gameMessage = msg;
         this.notifyAll();
     }
 
     @Override
-    public synchronized void notifyEnd(ServerMsg msg) throws RemoteException {
+    public synchronized void notifyEnd(GameMessage msg) throws RemoteException {
         gameStatus = GAME_END;
-        serverMsg = msg;
+        gameMessage = msg;
         // interrupt the io thread
         ioThread.interrupt();
     }

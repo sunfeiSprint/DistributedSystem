@@ -1,4 +1,3 @@
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
@@ -25,12 +24,22 @@ public class Game {
         // randomly set the treasure location
         Random random = new Random();
         int limit = gameState.getDimension() * gameState.getDimension();
-        for(int i = 0; i < gameState.getNumOfTreasure(); i++) {
-            int r = random.nextInt(limit);
-            int x = r % gameState.getDimension();
-            int y = r / gameState.getDimension();
-            gameState.setBlockToTreasure(x, y);
+        int count = 0;
+        while(count < gameState.getNumOfTreasure()) {
+            int left = gameState.getNumOfTreasure() - count;
+            int num = (random.nextInt(left) % 5) + 1;
+            while(true) {
+                int r = random.nextInt(limit);
+                int x = r % gameState.getDimension();
+                int y = r / gameState.getDimension();
+                if(gameState.isEmptyBlock(x, y)) {
+                    gameState.setBlockToTreasure(x, y, num);
+                    count += num;
+                    break;
+                }
+            }
         }
+
         // randomly set the initial location of players
         Map<Integer, Player> players = gameState.getPlayers();
         for(Integer key : players.keySet()) {
@@ -48,37 +57,19 @@ public class Game {
         }
     }
 
-    public ServerMsg createMsgForPlayer(int id) {
-        ServerMsg serverMsg = new ServerMsg(gameState);
-        serverMsg.setPlayerPos(gameState.getPlayer(id).getCoordinate());
-        return serverMsg;
+    public GameMessage createMsgForPlayer(int id) {
+        GameMessage gameMessage = new GameMessage(gameState);
+        gameMessage.setPlayerPos(gameState.getPlayer(id).getCoordinate());
+        return gameMessage;
     }
 
-    public ServerMsg createGameOverMsgForPlayer(int id) {
-        ServerMsg serverMsg = new ServerMsg(gameState);
-        serverMsg.setPlayerPos(gameState.getPlayer(id).getCoordinate());
-        serverMsg.setGameOver(true);
-        return serverMsg;
+    public GameMessage createGameOverMsgForPlayer(int id) {
+        GameMessage gameMessage = new GameMessage(gameState);
+        gameMessage.setPlayerPos(gameState.getPlayer(id).getCoordinate());
+        gameMessage.setGameOver(true);
+        gameMessage.setStatistics(gameState.generateStatistics());
+        return gameMessage;
     }
-
-//    public GameState getGameState() {
-//        return gameState;
-//    }
-
-//    public GameState getGameStateForPlayer(Player player) {
-//    	GameState  gameSnapshot;
-//		try {
-//			gameSnapshot = gameState.clone();
-//		    int X = player.getCoordinate().getX();
-//		    int Y = player.getCoordinate().getY();
-////			gameSnapshot.setMapLocation(X, Y.CUR_PLAYER);
-//            gameSnapshot.setBlockToCurPlayer(X, Y);
-//	    	return gameSnapshot;
-//		} catch (CloneNotSupportedException e) {
-//			e.printStackTrace();
-//			return null;
-//		}
-//    }
 
     public boolean playerMove(int playerId, char dir) {
         Player player = gameState.getPlayer(playerId);
@@ -86,8 +77,8 @@ public class Game {
         Coordinate target = getTargetCoordinate(playerPos, dir);
         if(gameState.isTargetReachable(target)) {
             if (gameState.isTreasure(target)) {
-                gameState.treasureCollected();
-                player.collectTreasure();
+                int num = gameState.treasureCollected(target);
+                player.collectTreasure(num);
             }
             // update GameState and player coordinate
             gameState.playerMove(playerPos, target);
