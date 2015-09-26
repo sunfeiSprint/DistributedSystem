@@ -24,7 +24,7 @@ public class MazeGamePeerImpl implements MazeGamePeer {
     private int playerNum = 0;
 
     // test registry
-    private static final int REGISTRY_PORT = 8888;
+//    private static final int REGISTRY_PORT = 8888;
 
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
@@ -277,19 +277,19 @@ public class MazeGamePeerImpl implements MazeGamePeer {
     public boolean joinGame(MazeGamePeer peer) throws RemoteException {
         if(gameStatus == GAME_INIT) {
             // The first player join in, notify game start in 20 seconds
+            System.out.println("Peer " + playerNum + " join in");
             addPeer(peer);
             // TODO: change back to 20
-            executor.schedule(new GameInitializeTask(), 10, TimeUnit.SECONDS);
+            executor.schedule(new GameInitializeTask(), 20, TimeUnit.SECONDS);
             gameStatus = GAME_PENDING_START;
-            System.out.println("first client");
             return true;
         } else if (gameStatus == GAME_PENDING_START) {
+            System.out.println("Peer " + playerNum + " join in");
             addPeer(peer);
-            System.out.println("new client");
             return true;
         } else {
             // game started, can't join anymore
-            System.out.println("join refuse");
+            System.out.println("Game has started, refuse joining request.");
             return false;
         }
     }
@@ -381,13 +381,13 @@ public class MazeGamePeerImpl implements MazeGamePeer {
         return true;
     }
 
-    public static void startAsHost(int dimension, int numOfTreasure) {
+    public static void startAsHost(int dimension, int numOfTreasure, int port) {
         try {
             MazeGamePeerImpl maze = new MazeGamePeerImpl(dimension, numOfTreasure, Thread.currentThread());
             maze.setAsPrimaryServer();
             MazeGamePeer stub = (MazeGamePeer) UnicastRemoteObject.exportObject(maze, 0);
             // Bind the remote object's stub in the registry
-            Registry rmiRegistry = LocateRegistry.createRegistry(REGISTRY_PORT);
+            Registry rmiRegistry = LocateRegistry.createRegistry(port);
             rmiRegistry.rebind(MazeGamePeer.NAME, stub);
             System.out.println("Create new game, waiting for other players to join");
             //maze.setPlayer
@@ -405,9 +405,9 @@ public class MazeGamePeerImpl implements MazeGamePeer {
         }
     }
 
-    public static void startAsClient(String host) {
+    public static void startAsClient(String host, int port) {
         try {
-            Registry registry = LocateRegistry.getRegistry(host, REGISTRY_PORT);
+            Registry registry = LocateRegistry.getRegistry(host, port);
             MazeGamePeer server = (MazeGamePeer) registry.lookup(MazeGamePeer.NAME);
             MazeGamePeerImpl player = new MazeGamePeerImpl(Thread.currentThread());
             UnicastRemoteObject.exportObject(player, 0);
@@ -423,6 +423,8 @@ public class MazeGamePeerImpl implements MazeGamePeer {
                 player.gaming();
                 // clean exit
                 player.shutDown();
+            } else {
+                System.out.println("joining game failed.");
             }
         } catch (RemoteException e) {
             // join game failed
@@ -436,18 +438,31 @@ public class MazeGamePeerImpl implements MazeGamePeer {
         }
     }
 
+    public static void errorArgs() {
+        System.out.println("Usage note:");
+        System.out.println("java MazeGamePeerImpl host <dimension> <numOfTreasure> <RMI port> for the first player");
+        System.out.println("java MazeGamePeerImpl player <hostname> <RMI port> for the other players");
+        System.exit(0);
+    }
+
     public static void main(String[] args) {
+        // set the rmi invocation timeout value
+        System.setProperty("sun.rmi.transport.tcp.responseTimeout", "2000");
         if (args.length < 1) {
-            System.err.println("Usage note:");
-            System.err.println("java mazeGameP2PImpl host [N] [numTreasure] [hostAddr] for the first player");
-            System.err.println("java mazeGameP2PImpl player [hostAddr] for the other players");
+            errorArgs();
         }
 
         if (args[0].equals("host")) {
             //if it is the host, create primaryServer
-            startAsHost(Integer.valueOf(args[1]), Integer.valueOf(args[2]));
+            if(args.length != 4) {
+                errorArgs();
+            }
+            startAsHost(Integer.valueOf(args[1]), Integer.valueOf(args[2]), Integer.valueOf(args[3]));
         } else {
-            startAsClient(args[1]);
+            if(args.length != 3) {
+                errorArgs();
+            }
+            startAsClient(args[1], Integer.valueOf(args[2]));
         }
 
     }
